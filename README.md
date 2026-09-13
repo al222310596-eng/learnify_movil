@@ -1,0 +1,1 @@
+Para ejecutar el proyecto se debe correr primero la version web, posteriormente desde el cmd de tu compiutadora extrae la IPv4 para poder usarla en el archivo api.js y en la linea 8 vas a cambiar la ip por la de tu maquina y correr con el comando npx expo start -c en terminal y ejecuta con la apliación de expo go 
