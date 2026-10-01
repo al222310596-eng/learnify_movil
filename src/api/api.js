@@ -5,7 +5,7 @@
 import axios from 'axios';
 
 // IP DE TU COMPUTADORA
-const IP = '172.20.10.4';  //ip de datos 172.20.10.2 
+const IP = '192.168.100.14';  //ip de datos 172.20.10.2 172.20.10.4
 //const IP = '192.168.100.14'; // ip de internet casa 192.168.100.14
 export const BASE_URL = `http://${IP}:5000/api`; // ✅ EXPORTADA
 
@@ -394,6 +394,135 @@ export const jitsiAPI = {
     } catch (error) {
       console.error('Error al obtener salas:', error);
       return { exito: false, salas: [] };
+    }
+  }
+};
+
+// ============================================
+// ESTADÍAS (extendido)
+// ============================================
+
+export const estadiasAPI = {
+  // Listar estadías (ya lo tenías)
+  getEstadias: async (usuarioId) => {
+    try {
+      const response = await api.get(`/estadias/${usuarioId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener estadías:', error);
+      return { exito: false, estadias: [] };
+    }
+  },
+
+  // Detalle de una estadía
+  getDetalleEstadia: async (estadiaId) => {
+    try {
+      const response = await api.get(`/estadias/detalle/${estadiaId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener detalle:', error);
+      return { exito: false };
+    }
+  },
+
+  // Crear estadía
+  crearEstadia: async (datos) => {
+    try {
+      const response = await api.post('/estadias/crear', datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error al crear estadía:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al crear' };
+    }
+  },
+
+  // Actualizar estadía
+  actualizarEstadia: async (estadiaId, datos) => {
+    try {
+      const response = await api.put(`/estadias/actualizar/${estadiaId}`, datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error al actualizar estadía:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al actualizar' };
+    }
+  },
+
+  // Eliminar estadía
+  eliminarEstadia: async (estadiaId) => {
+    try {
+      const response = await api.delete(`/estadias/eliminar/${estadiaId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al eliminar estadía:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar' };
+    }
+  },
+
+  // ✅ NUEVO: buscar maestros (autocompletado)
+  buscarMaestros: async (q, limite = 8) => {
+    try {
+      const response = await api.get('/usuarios/maestros', {
+        params: { q, limite }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al buscar maestros:', error);
+      return { exito: false, maestros: [] };
+    }
+  },
+
+  // ✅ NUEVO: progreso de horas
+  getProgreso: async (estadiaId) => {
+    try {
+      const response = await api.get(`/estadias/${estadiaId}/progreso`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener progreso:', error);
+      return { exito: false };
+    }
+  },
+
+  // ✅ NUEVO: listar registros de horas
+  getRegistros: async (estadiaId) => {
+    try {
+      const response = await api.get(`/estadias/${estadiaId}/registros`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener registros:', error);
+      return { exito: false, registros: [] };
+    }
+  },
+
+  // ✅ NUEVO: crear registro de horas
+  crearRegistro: async (estadiaId, datos) => {
+    try {
+      const response = await api.post(`/estadias/${estadiaId}/registros`, datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error al crear registro:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al guardar' };
+    }
+  },
+
+  // ✅ NUEVO: actualizar registro
+  actualizarRegistro: async (registroId, datos) => {
+    try {
+      const response = await api.put(`/registros/${registroId}`, datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error al actualizar registro:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al actualizar' };
+    }
+  },
+
+  // ✅ NUEVO: eliminar registro
+  eliminarRegistro: async (registroId) => {
+    try {
+      const response = await api.delete(`/registros/${registroId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al eliminar registro:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar' };
     }
   }
 };
