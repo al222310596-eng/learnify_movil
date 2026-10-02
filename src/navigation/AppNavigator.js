@@ -34,9 +34,10 @@ import CalificarTareaScreen from '../screens/CalificarTareaScreen';
 import DetalleTareaScreen from '../screens/DetalleTareaScreen';
 import FirmaScreen from '../screens/FirmaScreen';
 
-// ✅ Pantallas de Estadías
+// Pantallas de Estadías
 import CrearEstadiaScreen from '../screens/CrearEstadiaScreen';
 import RegistrarHorasScreen from '../screens/RegistrarHorasScreen';
+import DetalleEstadiaScreen from '../screens/DetalleEstadiaScreen';
 
 // Importar la pantalla de videollamada
 import VideollamadaScreen from '../screens/VideollamadaScreen';
@@ -121,11 +122,9 @@ function MainStack() {
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="Analisis" component={AnalisisScreen} />
-
-      {/* ✅ Pantallas de Estadías */}
       <Stack.Screen name="CrearEstadia" component={CrearEstadiaScreen} />
       <Stack.Screen name="RegistrarHoras" component={RegistrarHorasScreen} />
-
+      <Stack.Screen name="DetalleEstadia" component={DetalleEstadiaScreen} />
       <Stack.Screen name="CrearDual" component={CrearDualScreen} />
       <Stack.Screen name="CrearEquipo" component={CrearEquipoScreen} />
       <Stack.Screen name="CrearTarea" component={CrearTareaScreen} />
