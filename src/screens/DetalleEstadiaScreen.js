@@ -73,42 +73,41 @@ export default function DetalleEstadiaScreen({ route, navigation }) {
   // ============================================
   // GENERAR Y COMPARTIR PDF
   // ============================================
-const imprimirFormato = async () => {
-  try {
-    setGenerandoPDF(true);
-    setModalVisible(false);
+  const imprimirFormato = async () => {
+    try {
+      setGenerandoPDF(true);
+      setModalVisible(false);
 
-    const html = await estadiasAPI.getFormatoHTML(estadia._id);
-    if (!html || typeof html !== 'string') {
-      throw new Error('No se pudo obtener el formato');
-    }
+      const html = await estadiasAPI.getFormatoHTML(estadia._id);
+      if (!html || typeof html !== 'string') {
+        throw new Error('No se pudo obtener el formato');
+      }
 
-    // Pedimos el PDF también en base64
-    const { base64 } = await Print.printToFileAsync({ html, base64: true });
-    if (!base64) throw new Error('No se pudo generar el PDF');
+      const { base64 } = await Print.printToFileAsync({ html, base64: true });
+      if (!base64) throw new Error('No se pudo generar el PDF');
 
-    // Lo escribimos en una ruta propia
-    const destino = `${FileSystem.documentDirectory}Formato_Estadia_${estadia._id}.pdf`;
-    await FileSystem.writeAsStringAsync(destino, base64, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(destino, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Compartir formato de estadía',
-        UTI: 'com.adobe.pdf',
+      const destino = `${FileSystem.documentDirectory}Formato_Estadia_${estadia._id}.pdf`;
+      await FileSystem.writeAsStringAsync(destino, base64, {
+        encoding: FileSystem.EncodingType.Base64,
       });
-    } else {
-      Alert.alert('PDF generado', `Guardado en: ${destino}`);
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(destino, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Compartir formato de estadía',
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        Alert.alert('PDF generado', `Guardado en: ${destino}`);
+      }
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      Alert.alert('Error', `No se pudo generar el PDF: ${error.message}`);
+    } finally {
+      setGenerandoPDF(false);
     }
-  } catch (error) {
-    console.error('Error al generar PDF:', error);
-    Alert.alert('Error', `No se pudo generar el PDF: ${error.message}`);
-  } finally {
-    setGenerandoPDF(false);
-  }
-};
+  };
+
   // ============================================
   // RENDER
   // ============================================
@@ -133,10 +132,7 @@ const imprimirFormato = async () => {
   if (!estadia) return null;
 
   const estadoInfo = etiquetaEstado(estadia.estado);
-  const horas = parseInt(estadia.horas) || 0;
-  const progreso = Math.min(100, (horas / 600) * 100);
 
-  // Separar equipo en chips
   const equipoMiembros = estadia.equipo && estadia.equipo.trim()
     ? estadia.equipo.split(',').map(m => m.trim()).filter(Boolean)
     : [];
@@ -224,21 +220,14 @@ const imprimirFormato = async () => {
           ) : null}
         </Seccion>
 
-        {/* SECCIÓN: Periodo */}
+        {/* SECCIÓN: Periodo y Fechas (SIN barra de progreso) */}
         <Seccion titulo="Periodo y Fechas" icono="calendar-outline">
           <Item label="Periodo" valor={estadia.periodo} icono="calendar-outline" />
           <Item label="Fecha de inicio" valor={formatearFecha(estadia.fecha_inicio)} icono="calendar-outline" />
           <Item label="Fecha de término" valor={formatearFecha(estadia.fecha_fin)} icono="calendar-outline" />
-          <View style={styles.item}>
-            <Text style={styles.itemLabel}>HORAS TOTALES</Text>
-            <Text style={styles.itemValor}>{horas} / 600 hrs</Text>
-            <View style={styles.progresoBarra}>
-              <View style={[styles.progresoFill, { width: `${progreso}%` }]} />
-            </View>
-          </View>
+          {/* ✅ Eliminado: "Horas totales" con barra de progreso (está en RegistrarHoras) */}
         </Seccion>
 
-        {/* Espacio para el FAB */}
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -329,7 +318,6 @@ const styles = StyleSheet.create({
 
   scrollContent: { padding: 15 },
 
-  // HERO
   hero: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -369,7 +357,6 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 11, fontWeight: '700' },
 
-  // SECCIÓN
   seccion: {
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -408,7 +395,6 @@ const styles = StyleSheet.create({
   },
   itemValor: { fontSize: 15, color: '#1e293b', flex: 1 },
 
-  // Equipo chips
   chipsEquipo: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
   chipEquipo: {
     flexDirection: 'row',
@@ -421,7 +407,6 @@ const styles = StyleSheet.create({
   },
   chipEquipoText: { fontSize: 12, color: '#475569', fontWeight: '500' },
 
-  // Descripción
   descripcionBox: {
     backgroundColor: '#f8fafc',
     borderLeftWidth: 3,
@@ -432,17 +417,7 @@ const styles = StyleSheet.create({
   },
   descripcionText: { fontSize: 14, color: '#475569', lineHeight: 20 },
 
-  // Progreso
-  progresoBarra: {
-    height: 8,
-    backgroundColor: '#e2e8f0',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginTop: 8,
-  },
-  progresoFill: { height: '100%', backgroundColor: '#667eea', borderRadius: 4 },
-
-  // MODAL
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',

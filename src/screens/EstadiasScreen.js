@@ -1,5 +1,6 @@
 // ============================================
-// EstadiasScreen - Lista de Estadías
+// ARCHIVO: EstadiasScreen.js
+// Lista de Estadías con todas las acciones
 // ============================================
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -30,19 +31,27 @@ export default function EstadiasScreen({ navigation }) {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
 
-  // Cargar cada vez que la pantalla recibe foco
+  const esMaestro = user?.rol === 'maestro';
+  const esAlumno = user?.rol === 'alumno';
+
   useFocusEffect(
     useCallback(() => {
-      cargarEstadias();
-    }, [])
+      if (user && user._id) {
+        cargarEstadias();
+      }
+    }, [user])
   );
 
-  // Aplicar filtros cuando cambian
   useEffect(() => {
     aplicarFiltros();
   }, [estadias, filtroEstado, busqueda]);
 
   const cargarEstadias = async () => {
+    if (!user || !user._id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const result = await estadiasAPI.getEstadias(user._id);
@@ -63,7 +72,8 @@ export default function EstadiasScreen({ navigation }) {
   const aplicarFiltros = () => {
     let resultado = [...estadias];
 
-    if (filtroEstado !== 'todos') {
+    // ✅ Solo maestros pueden filtrar por estado
+    if (esMaestro && filtroEstado !== 'todos') {
       resultado = resultado.filter(e => e.estado === filtroEstado);
     }
 
@@ -103,18 +113,39 @@ export default function EstadiasScreen({ navigation }) {
     return mapa[estado] || { texto: estado || 'Sin estado', icono: 'help-circle-outline', color: '#64748b', bg: '#f1f5f9' };
   };
 
+  // ============================================
+  // ELIMINAR
+  // ============================================
+  const confirmarEliminar = (estadia) => {
+    Alert.alert(
+      'Eliminar estadía',
+      `¿Eliminar "${estadia.empresa}"? Esta acción no se puede deshacer.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            const res = await estadiasAPI.eliminarEstadia(estadia._id);
+            if (res.exito) {
+              Alert.alert('Éxito', 'Estadía eliminada');
+              cargarEstadias();
+            } else {
+              Alert.alert('Error', res.mensaje || 'No se pudo eliminar');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const renderEstadia = ({ item }) => {
     const estadoInfo = etiquetaEstado(item.estado);
     const horas = parseInt(item.horas) || 0;
     const progreso = Math.min(100, (horas / 600) * 100);
 
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('DetalleEstadia', { id: item._id })}
-        activeOpacity={0.7}
-      >
-        {/* Estado badge */}
+      <View style={styles.card}>
         <View style={[styles.badge, { backgroundColor: estadoInfo.bg }]}>
           <Icon name={estadoInfo.icono} size={14} color={estadoInfo.color} />
           <Text style={[styles.badgeText, { color: estadoInfo.color }]}>
@@ -122,12 +153,19 @@ export default function EstadiasScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* Título / Proyecto */}
+        {esMaestro && item.alumno_creador_nombre && (
+          <View style={styles.cardAlumno}>
+            <Icon name="person-circle-outline" size={14} color="#4338ca" />
+            <Text style={styles.cardAlumnoTexto} numberOfLines={1}>
+              Alumno: <Text style={{ fontWeight: '700' }}>{item.alumno_creador_nombre}</Text>
+            </Text>
+          </View>
+        )}
+
         <Text style={styles.proyecto} numberOfLines={2}>
           {item.proyecto || 'Proyecto sin nombre'}
         </Text>
 
-        {/* Empresa */}
         <View style={styles.fila}>
           <Icon name="business-outline" size={16} color="#667eea" />
           <Text style={styles.empresa} numberOfLines={1}>
@@ -135,7 +173,6 @@ export default function EstadiasScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* Fechas */}
         <View style={styles.fila}>
           <Icon name="calendar-outline" size={16} color="#667eea" />
           <Text style={styles.fechas}>
@@ -143,23 +180,47 @@ export default function EstadiasScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* Horas con barra de progreso */}
-        <View style={styles.progresoContainer}>
-          <View style={styles.fila}>
-            <Icon name="hourglass-outline" size={16} color="#667eea" />
-            <Text style={styles.horas}>{horas} / 600 hrs</Text>
-          </View>
-          <View style={styles.progresoBarra}>
-            <View style={[styles.progresoFill, { width: `${progreso}%` }]} />
-          </View>
-        </View>
+        {/* ✅ ACCIONES */}
+        <View style={styles.acciones}>
+          <TouchableOpacity
+            style={[styles.btnAccion, styles.btnVer]}
+            onPress={() => navigation.navigate('DetalleEstadia', { id: item._id })}
+          >
+            <Icon name="eye-outline" size={15} color="#4338ca" />
+            <Text style={styles.btnVerTexto}>Ver</Text>
+          </TouchableOpacity>
 
-        {/* Botón ver detalle */}
-        <View style={styles.footerCard}>
-          <Text style={styles.verDetalle}>Ver detalle</Text>
-          <Icon name="chevron-forward-outline" size={18} color="#667eea" />
+          {/* Editar - SOLO ALUMNO */}
+          {esAlumno && (
+            <TouchableOpacity
+              style={[styles.btnAccion, styles.btnEditar]}
+              onPress={() => navigation.navigate('CrearEstadia', { estadiaId: item._id })}
+            >
+              <Icon name="create-outline" size={15} color="#4338ca" />
+              <Text style={styles.btnEditarTexto}>Editar</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Registrar horas - SOLO ALUMNO */}
+          {esAlumno && (
+            <TouchableOpacity
+              style={[styles.btnAccion, styles.btnRegistrar]}
+              onPress={() => navigation.navigate('RegistrarHoras', { estadiaId: item._id })}
+            >
+              <Icon name="time-outline" size={15} color="#fff" />
+              <Text style={styles.btnRegistrarTexto}>Registrar</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Eliminar - ambos */}
+          <TouchableOpacity
+            style={[styles.btnAccion, styles.btnEliminar]}
+            onPress={() => confirmarEliminar(item)}
+          >
+            <Icon name="trash-outline" size={15} color="#dc2626" />
+          </TouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -185,12 +246,23 @@ export default function EstadiasScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          <Icon name="business-outline" size={22} color="#667eea" /> Mis Estadías
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>
+            <Icon name="business-outline" size={22} color="#667eea" />{' '}
+            {esMaestro ? 'Estadías de Alumnos' : 'Mis Estadías'}
+          </Text>
+        </View>
+
+        {esAlumno && (
+          <TouchableOpacity
+            style={styles.btnAgregar}
+            onPress={() => navigation.navigate('CrearEstadia')}
+          >
+            <Icon name="add" size={22} color="#fff" />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* Buscador */}
       <View style={styles.searchContainer}>
         <Icon name="search-outline" size={20} color="#94a3b8" />
         <TextInput
@@ -207,37 +279,49 @@ export default function EstadiasScreen({ navigation }) {
         )}
       </View>
 
-      {/* Filtros por estado (chips horizontales) - CORREGIDO */}
-      <View style={styles.chipsWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chipsContainer}
-          style={styles.chipsScroll}
-        >
-          {estados.map((e) => (
-            <TouchableOpacity
-              key={e.key}
-              style={[styles.chip, filtroEstado === e.key && styles.chipActivo]}
-              onPress={() => setFiltroEstado(e.key)}
-            >
-              <Text style={[styles.chipText, filtroEstado === e.key && styles.chipTextActivo]}>
-                {e.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+      {/* Filtros - SOLO MAESTRO */}
+      {esMaestro && (
+        <View style={styles.chipsWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsContainer}
+            style={styles.chipsScroll}
+          >
+            {estados.map((e) => (
+              <TouchableOpacity
+                key={e.key}
+                style={[styles.chip, filtroEstado === e.key && styles.chipActivo]}
+                onPress={() => setFiltroEstado(e.key)}
+              >
+                <Text style={[styles.chipText, filtroEstado === e.key && styles.chipTextActivo]}>
+                  {e.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
-      {/* Lista */}
       {filtradas.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Icon name="folder-open-outline" size={60} color="#cbd5e1" />
           <Text style={styles.emptyText}>
             {estadias.length === 0
-              ? 'Aún no tienes estadías registradas'
+              ? esMaestro
+                ? 'Aún no hay estadías de tus alumnos'
+                : 'Aún no tienes estadías registradas'
               : 'No hay resultados con los filtros actuales'}
           </Text>
+          {esAlumno && estadias.length === 0 && (
+            <TouchableOpacity
+              style={styles.btnCrearPrimera}
+              onPress={() => navigation.navigate('CrearEstadia')}
+            >
+              <Icon name="add-circle-outline" size={20} color="#fff" />
+              <Text style={styles.btnCrearPrimeraTexto}>Solicitar mi primera estadía</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <FlatList
@@ -260,14 +344,25 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 10, color: '#94a3b8', fontSize: 16 },
 
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 15,
     paddingBottom: 10,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+    gap: 12,
   },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#1e293b' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
+  btnAgregar: {
+    backgroundColor: '#667eea',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   searchContainer: {
     flexDirection: 'row',
@@ -283,14 +378,8 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, paddingVertical: 10, fontSize: 15, color: '#1e293b' },
 
-  // ✅ NUEVOS ESTILOS - Chips con altura fija
-  chipsWrapper: {
-    height: 60,              // ← Altura total del área de chips
-    marginTop: 8,
-  },
-  chipsScroll: {
-    flexGrow: 0,             // ← Evita que el ScrollView se estire
-  },
+  chipsWrapper: { height: 60, marginTop: 8 },
+  chipsScroll: { flexGrow: 0 },
   chipsContainer: {
     paddingHorizontal: 15,
     alignItems: 'center',
@@ -298,7 +387,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    height: 36,              // ← Altura fija de cada chip
+    height: 36,
     paddingHorizontal: 16,
     borderRadius: 18,
     backgroundColor: '#fff',
@@ -337,6 +426,22 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 11, fontWeight: '700' },
 
+  cardAlumno: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eef2ff',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 8,
+    gap: 6,
+  },
+  cardAlumnoTexto: {
+    fontSize: 12,
+    color: '#4338ca',
+    flex: 1,
+  },
+
   proyecto: { fontSize: 17, fontWeight: '700', color: '#1e293b', marginBottom: 8 },
 
   fila: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
@@ -358,16 +463,33 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
 
-  footerCard: {
+  acciones: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 14,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
   },
-  verDetalle: { fontSize: 13, color: '#667eea', fontWeight: '600' },
+  btnAccion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 5,
+  },
+  btnVer: { backgroundColor: '#e0e7ff' },
+  btnVerTexto: { fontSize: 12, color: '#4338ca', fontWeight: '700' },
+  btnImprimir: { backgroundColor: '#0ea5e9' },
+  btnImprimirTexto: { fontSize: 12, color: '#fff', fontWeight: '700' },
+  btnEditar: { backgroundColor: '#e0e7ff' },
+  btnEditarTexto: { fontSize: 12, color: '#4338ca', fontWeight: '700' },
+  btnRegistrar: { backgroundColor: '#6366f1', flex: 1 },
+  btnRegistrarTexto: { fontSize: 12, color: '#fff', fontWeight: '700' },
+  btnEliminar: { backgroundColor: '#fee2e2' },
 
   emptyContainer: {
     flex: 1,
@@ -380,5 +502,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#94a3b8',
     textAlign: 'center',
+  },
+  btnCrearPrimera: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#667eea',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 8,
+    marginTop: 20,
+  },
+  btnCrearPrimeraTexto: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });
