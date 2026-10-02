@@ -5,9 +5,9 @@
 import axios from 'axios';
 
 // IP DE TU COMPUTADORA
-const IP = '192.168.100.14';  //ip de datos 172.20.10.2 172.20.10.4
+const IP = '192.168.1.5';  //ip de datos 172.20.10.2 172.20.10.4
 //const IP = '192.168.100.14'; // ip de internet casa 192.168.100.14
-export const BASE_URL = `http://${IP}:5000/api`; // ✅ EXPORTADA
+export const BASE_URL = `http://192.168.1.5:5000/api`; // ✅ EXPORTADA
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -524,7 +524,21 @@ export const estadiasAPI = {
       console.error('Error al eliminar registro:', error);
       return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar' };
     }
-  }
+    
+  },
+
+    // ✅ NUEVO: obtener HTML del formato para imprimir
+  getFormatoHTML: async (estadiaId) => {
+    try {
+      const response = await api.get(`/estadias/formato/${estadiaId}`, {
+        responseType: 'text'  // ← HTML plano, no JSON
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener formato:', error);
+      return null;
+    }
+  },
 };
 
 export default api;
