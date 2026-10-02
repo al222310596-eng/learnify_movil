@@ -13,7 +13,6 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
@@ -23,7 +22,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { estadiasAPI } from '../api/api';
 
 export default function CrearEstadiaScreen({ route, navigation }) {
-  // ✅ CORREGIDO: usar `user`
   const { user } = useAuth();
   const estadiaId = route.params?.estadiaId;
   const modoEdicion = !!estadiaId;
@@ -170,7 +168,6 @@ export default function CrearEstadiaScreen({ route, navigation }) {
   };
 
   const guardar = async () => {
-    // ✅ Protección
     if (!user || !user._id) {
       Alert.alert('Error', 'Sesión no válida. Vuelve a iniciar sesión.');
       return;
@@ -199,7 +196,7 @@ export default function CrearEstadiaScreen({ route, navigation }) {
     setCargando(true);
     try {
       const datos = {
-        usuario_id: user._id,  // ✅ user._id
+        usuario_id: user._id,
         maestro_id: form.maestro_id,
         nombre: form.nombre.trim(),
         apellidos: form.apellidos.trim(),
@@ -252,7 +249,6 @@ export default function CrearEstadiaScreen({ route, navigation }) {
     return date.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
-  // ✅ Protección al final (después de todos los hooks)
   if (!user || !user._id) {
     return (
       <View style={styles.centrado}>
@@ -354,29 +350,26 @@ export default function CrearEstadiaScreen({ route, navigation }) {
           placeholderTextColor="#94a3b8"
         />
 
+        {/* ✅ Sugerencias con .map() en lugar de FlatList (evita el warning VirtualizedList) */}
         {mostrarSugerencias && sugerencias.length > 0 && (
           <View style={styles.sugerencias}>
-            <FlatList
-              data={sugerencias}
-              keyExtractor={(item) => item._id}
-              keyboardShouldPersistTaps="handled"
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.sugerenciaItem}
-                  onPress={() => seleccionarMaestro(item)}
-                >
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarTexto}>
-                      {item.nombre.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.sugerenciaNombre}>{item.nombre}</Text>
-                    <Text style={styles.sugerenciaEmail}>{item.email}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
+            {sugerencias.map((item) => (
+              <TouchableOpacity
+                key={item._id}
+                style={styles.sugerenciaItem}
+                onPress={() => seleccionarMaestro(item)}
+              >
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarTexto}>
+                    {item.nombre.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sugerenciaNombre}>{item.nombre}</Text>
+                  <Text style={styles.sugerenciaEmail}>{item.email}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
@@ -460,7 +453,7 @@ export default function CrearEstadiaScreen({ route, navigation }) {
             value={form.fecha_inicio || new Date()}
             mode="date"
             display="default"
-            onChange={(event, date) => {
+            onValueChange={(event, date) => {
               setMostrarFechaInicio(Platform.OS === 'ios');
               if (date) actualizarCampo('fecha_inicio', date);
             }}
@@ -478,7 +471,7 @@ export default function CrearEstadiaScreen({ route, navigation }) {
             value={form.fecha_fin || new Date()}
             mode="date"
             display="default"
-            onChange={(event, date) => {
+            onValueChange={(event, date) => {
               setMostrarFechaFin(Platform.OS === 'ios');
               if (date) actualizarCampo('fecha_fin', date);
             }}
@@ -569,7 +562,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
     marginTop: 4,
-    maxHeight: 220
+    maxHeight: 220,
+    overflow: 'hidden'
   },
   sugerenciaItem: {
     flexDirection: 'row',
