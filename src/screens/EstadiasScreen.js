@@ -1,6 +1,6 @@
 // ============================================
 // ARCHIVO: EstadiasScreen.js
-// Lista de Estadías con todas las acciones
+// Lista de Estadías con todas las acciones + Imprimir
 // ============================================
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -19,6 +19,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useAuth } from '../contexts/AuthContext';
 import { estadiasAPI } from '../api/api';
 
@@ -30,6 +33,7 @@ export default function EstadiasScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
+  const [generandoPDFId, setGenerandoPDFId] = useState(null); // ID de la estadía que se está imprimiendo
 
   const esMaestro = user?.rol === 'maestro';
   const esAlumno = user?.rol === 'alumno';
@@ -114,6 +118,43 @@ export default function EstadiasScreen({ navigation }) {
   };
 
   // ============================================
+  // IMPRIMIR FORMATO DE UNA ESTADÍA (desde la tarjeta)
+  // ============================================
+  const imprimirEstadia = async (estadia) => {
+    try {
+      setGenerandoPDFId(estadia._id);
+      
+      const html = await estadiasAPI.getFormatoHTML(estadia._id);
+      if (!html || typeof html !== 'string') {
+        throw new Error('No se pudo obtener el formato');
+      }
+
+      const { base64 } = await Print.printToFileAsync({ html, base64: true });
+      if (!base64) throw new Error('No se pudo generar el PDF');
+
+      const destino = `${FileSystem.documentDirectory}Formato_Estadia_${estadia._id}.pdf`;
+      await FileSystem.writeAsStringAsync(destino, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(destino, {
+          mimeType: 'application/pdf',
+          dialogTitle: 'Compartir formato de estadía',
+          UTI: 'com.adobe.pdf',
+        });
+      } else {
+        Alert.alert('PDF generado', `Guardado en: ${destino}`);
+      }
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      Alert.alert('Error', `No se pudo generar el PDF: ${error.message}`);
+    } finally {
+      setGenerandoPDFId(null);
+    }
+  };
+
+  // ============================================
   // ELIMINAR
   // ============================================
   const confirmarEliminar = (estadia) => {
@@ -141,8 +182,7 @@ export default function EstadiasScreen({ navigation }) {
 
   const renderEstadia = ({ item }) => {
     const estadoInfo = etiquetaEstado(item.estado);
-    const horas = parseInt(item.horas) || 0;
-    const progreso = Math.min(100, (horas / 600) * 100);
+    const imprimiendo = generandoPDFId === item._id;
 
     return (
       <View style={styles.card}>
@@ -190,6 +230,22 @@ export default function EstadiasScreen({ navigation }) {
             <Text style={styles.btnVerTexto}>Ver</Text>
           </TouchableOpacity>
 
+          {/* Imprimir - Ambos roles */}
+          <TouchableOpacity
+            style={[styles.btnAccion, styles.btnImprimir]}
+            onPress={() => imprimirEstadia(item)}
+            disabled={imprimiendo}
+          >
+            {imprimiendo ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Icon name="print-outline" size={15} color="#fff" />
+                <Text style={styles.btnImprimirTexto}>Imprimir</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
           {/* Editar - SOLO ALUMNO */}
           {esAlumno && (
             <TouchableOpacity
@@ -201,16 +257,14 @@ export default function EstadiasScreen({ navigation }) {
             </TouchableOpacity>
           )}
 
-          {/* Registrar horas - SOLO ALUMNO */}
-          {esAlumno && (
-            <TouchableOpacity
-              style={[styles.btnAccion, styles.btnRegistrar]}
-              onPress={() => navigation.navigate('RegistrarHoras', { estadiaId: item._id })}
-            >
-              <Icon name="time-outline" size={15} color="#fff" />
-              <Text style={styles.btnRegistrarTexto}>Registrar</Text>
-            </TouchableOpacity>
-          )}
+          {/* Registrar horas - Ambos roles (según retroalimentación) */}
+          <TouchableOpacity
+            style={[styles.btnAccion, styles.btnRegistrar]}
+            onPress={() => navigation.navigate('RegistrarHoras', { estadiaId: item._id })}
+          >
+            <Icon name="time-outline" size={15} color="#fff" />
+            <Text style={styles.btnRegistrarTexto}>Registrar</Text>
+          </TouchableOpacity>
 
           {/* Eliminar - ambos */}
           <TouchableOpacity
@@ -447,21 +501,6 @@ const styles = StyleSheet.create({
   fila: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   empresa: { fontSize: 14, color: '#475569', flex: 1 },
   fechas: { fontSize: 13, color: '#64748b', flex: 1 },
-  horas: { fontSize: 13, color: '#64748b', fontWeight: '600' },
-
-  progresoContainer: { marginTop: 6 },
-  progresoBarra: {
-    height: 6,
-    backgroundColor: '#e2e8f0',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginTop: 6,
-  },
-  progresoFill: {
-    height: '100%',
-    backgroundColor: '#667eea',
-    borderRadius: 3,
-  },
 
   acciones: {
     flexDirection: 'row',
