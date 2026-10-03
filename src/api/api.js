@@ -5,9 +5,9 @@
 import axios from 'axios';
 
 // IP DE TU COMPUTADORA
-const IP = '192.168.75.207';  //ip de datos 172.20.10.2 172.20.10.4
+const IP = '192.168.100.105';  //ip de datos 172.20.10.2 172.20.10.4
 //const IP = '192.168.100.14'; // ip de internet casa 192.168.100.14
-export const BASE_URL = `http://192.168.75.207:5000/api`; // ✅ EXPORTADA
+export const BASE_URL = `http://192.168.100.105:5000/api`; // ✅ EXPORTADA
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -539,6 +539,29 @@ export const estadiasAPI = {
       return null;
     }
   },
+
+    // ✅ NUEVO: estadías nuevas para el maestro (notificación)
+  getEstadiasNuevas: async (usuarioId) => {
+    try {
+      const response = await api.get(`/estadias/nuevas/${usuarioId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener estadías nuevas:', error);
+      return { exito: false, total_nuevas: 0, estadias: [] };
+    }
+  },
+
+  // ✅ NUEVO: marcar estadías como vistas
+  marcarEstadiasVistas: async (usuarioId) => {
+    try {
+      const response = await api.post('/estadias/marcar-vistas', { usuario_id: usuarioId });
+      return response.data;
+    } catch (error) {
+      console.error('Error al marcar vistas:', error);
+      return { exito: false };
+    }
+  },
+
 };
 
 export default api;

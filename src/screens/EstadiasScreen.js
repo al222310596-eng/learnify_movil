@@ -34,6 +34,7 @@ export default function EstadiasScreen({ navigation }) {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [generandoPDFId, setGenerandoPDFId] = useState(null); // ID de la estadía que se está imprimiendo
+  const [nuevas, setNuevas] = useState({ total: 0, ids: [], lista: [] }); //Noti
 
   const esMaestro = user?.rol === 'maestro';
   const esAlumno = user?.rol === 'alumno';
@@ -64,6 +65,8 @@ export default function EstadiasScreen({ navigation }) {
       } else {
         setEstadias([]);
       }
+
+      await cargarNuevas(); //Noti
     } catch (error) {
       console.error('Error al cargar:', error);
       Alert.alert('Error', 'No se pudieron cargar las estadías');
@@ -72,6 +75,26 @@ export default function EstadiasScreen({ navigation }) {
       setRefreshing(false);
     }
   };
+
+//noti
+  const cargarNuevas = async () => {
+    if (!esMaestro || !user?._id) return;
+    const res = await estadiasAPI.getEstadiasNuevas(user._id);
+    if (res.exito) {
+      setNuevas({
+        total: res.total_nuevas || 0,
+        ids: (res.estadias || []).map(e => e._id),
+        lista: res.estadias || [],
+      });
+    }
+  };
+
+  const marcarComoVistas = async () => {
+    await estadiasAPI.marcarEstadiasVistas(user._id);
+    setNuevas({ total: 0, ids: [], lista: [] });
+  };
+
+
 
   const aplicarFiltros = () => {
     let resultado = [...estadias];
@@ -186,6 +209,13 @@ export default function EstadiasScreen({ navigation }) {
 
     return (
       <View style={styles.card}>
+        {/* ✅ NUEVO: ETIQUETA NUEVA Noti */}
+        {esMaestro && nuevas.ids.includes(item._id) && (
+          <View style={styles.etiquetaNueva}>
+            <Text style={styles.etiquetaNuevaTexto}>NUEVA</Text>
+          </View>
+        )}
+
         <View style={[styles.badge, { backgroundColor: estadoInfo.bg }]}>
           <Icon name={estadoInfo.icono} size={14} color={estadoInfo.color} />
           <Text style={[styles.badgeText, { color: estadoInfo.color }]}>
@@ -316,6 +346,30 @@ export default function EstadiasScreen({ navigation }) {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* ✅ NUEVO: BANNER DE NOTIFICACIÓN */}
+      
+      {esMaestro && nuevas.total > 0 && (
+        <View style={styles.banner}>
+          <Icon name="notifications" size={20} color="#b45309" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.bannerTitulo}>
+              {nuevas.total === 1
+                ? 'Tienes 1 estadía nueva'
+                : `Tienes ${nuevas.total} estadías nuevas`}
+            </Text>
+            {nuevas.lista[0] && (
+              <Text style={styles.bannerTexto} numberOfLines={1}>
+                {nuevas.lista[0].alumno_nombre} · {nuevas.lista[0].empresa}
+              </Text>
+            )}
+          </View>
+          <TouchableOpacity onPress={marcarComoVistas} style={styles.bannerBtn}>
+            <Text style={styles.bannerBtnTexto}>Marcar vistas</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
 
       <View style={styles.searchContainer}>
         <Icon name="search-outline" size={20} color="#94a3b8" />
@@ -557,4 +611,37 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
   },
+// ✅ NUEVO: notificación
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef3c7',
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+    marginHorizontal: 15,
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 10,
+    gap: 10,
+  },
+  bannerTitulo: { fontSize: 14, fontWeight: '700', color: '#92400e' },
+  bannerTexto: { fontSize: 12, color: '#b45309', marginTop: 2 },
+  bannerBtn: {
+    backgroundColor: '#f59e0b',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  bannerBtnTexto: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  etiquetaNueva: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  etiquetaNuevaTexto: { fontSize: 10, fontWeight: '800', color: '#fff' },
+
 });
