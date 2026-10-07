@@ -1,5 +1,5 @@
 // ============================================
-// PerfilScreen - Perfil del usuario (VERSIÓN FINAL)
+// PerfilScreen - Perfil del usuario
 // ============================================
 
 import React from 'react';
@@ -57,9 +57,9 @@ export default function PerfilScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
-      
+
       <ScrollView style={styles.container}>
-        {/* Header */}
+        {/* NUEVO: header unificado con EstadiasScreen */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
@@ -71,10 +71,13 @@ export default function PerfilScreen() {
           <Text style={styles.nombre}>{user.nombre || 'Usuario'}</Text>
           <View style={styles.rolBadge}>
             <Text style={styles.rolText}>
-              {user.rol === 'maestro' ? '👨‍🏫 Maestro' : '🎓 Alumno'}
+              {user.rol === 'maestro' ? 'Maestro' : 'Alumno'}
             </Text>
           </View>
-          <Text style={styles.email}>{user.email || 'sin correo'}</Text>
+          <View style={styles.emailFila}>
+            <Icon name="mail-outline" size={14} color="#94a3b8" />
+            <Text style={styles.email}>{user.email || 'sin correo'}</Text>
+          </View>
         </View>
 
         {/* Opciones */}
@@ -97,16 +100,19 @@ export default function PerfilScreen() {
             <Icon name="chevron-forward-outline" size={20} color="#94a3b8" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.optionItem}>
+          <TouchableOpacity style={[styles.optionItem, styles.optionItemLast]}>
             <Icon name="help-circle-outline" size={22} color="#667eea" />
             <Text style={styles.optionText}>Ayuda y soporte</Text>
             <Icon name="chevron-forward-outline" size={20} color="#94a3b8" />
           </TouchableOpacity>
         </View>
 
-        {/* Estadísticas */}
+        {/* NUEVO: estadisticas como tarjeta homogénea */}
         <View style={styles.statsContainer}>
-          <Text style={styles.statsTitle}>📊 Estadísticas</Text>
+          <Text style={styles.statsTitle}>
+            <Icon name="stats-chart-outline" size={18} color="#667eea" />{' '}
+            Estadísticas
+          </Text>
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>0</Text>
@@ -123,9 +129,9 @@ export default function PerfilScreen() {
           </View>
         </View>
 
-        {/* Logout */}
+        {/* NUEVO: botón de logout con estilo de botón unificado */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Icon name="log-out-outline" size={22} color="#ef4444" />
+          <Icon name="log-out-outline" size={20} color="#dc2626" />
           <Text style={styles.logoutText}>Cerrar sesión</Text>
         </TouchableOpacity>
 
@@ -136,6 +142,7 @@ export default function PerfilScreen() {
 }
 
 const styles = StyleSheet.create({
+  // NUEVO: fondo unificado
   safeArea: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -155,9 +162,12 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 16,
   },
+  // NUEVO: header unificado con EstadiasScreen (misma paleta y bordes)
   header: {
     backgroundColor: '#fff',
-    padding: 30,
+    paddingHorizontal: 20,
+    paddingTop: 25,
+    paddingBottom: 20,
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
@@ -165,6 +175,7 @@ const styles = StyleSheet.create({
   avatarContainer: {
     marginBottom: 15,
   },
+  // NUEVO: avatar con paleta primaria
   avatar: {
     width: 80,
     height: 80,
@@ -178,35 +189,47 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
+  // NUEVO: tipografía unificada
   nombre: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1e293b',
   },
+  // NUEVO: badge rol con paleta primaria suave
   rolBadge: {
-    backgroundColor: '#f0f0ff',
+    backgroundColor: '#e0e7ff',
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 20,
     marginTop: 8,
   },
   rolText: {
-    fontSize: 14,
-    color: '#667eea',
-    fontWeight: '500',
+    fontSize: 13,
+    color: '#4338ca',
+    fontWeight: '700',
+  },
+  emailFila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
   },
   email: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#94a3b8',
-    marginTop: 8,
   },
+  // NUEVO: opciones como tarjeta homogénea
   optionsContainer: {
     backgroundColor: '#fff',
-    marginTop: 20,
-    paddingHorizontal: 20,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#e2e8f0',
+    marginTop: 15,
+    marginHorizontal: 15,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   optionItem: {
     flexDirection: 'row',
@@ -215,23 +238,32 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
   },
+  optionItemLast: {
+    borderBottomWidth: 0,
+  },
   optionText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     color: '#1e293b',
     marginLeft: 15,
+    fontWeight: '500',
   },
+  // NUEVO: estadisticas como tarjeta homogénea
   statsContainer: {
     backgroundColor: '#fff',
-    marginTop: 20,
-    padding: 20,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#e2e8f0',
+    marginTop: 15,
+    marginHorizontal: 15,
+    padding: 16,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   statsTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#1e293b',
     marginBottom: 15,
   },
@@ -252,22 +284,29 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 4,
   },
+  // NUEVO: botón de cerrar sesión unificado como botón con borde
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
-    marginTop: 20,
-    padding: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#e2e8f0',
-    gap: 10,
+    marginTop: 15,
+    marginHorizontal: 15,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#fee2e2',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   logoutText: {
-    fontSize: 16,
-    color: '#ef4444',
-    fontWeight: '500',
+    fontSize: 14,
+    color: '#dc2626',
+    fontWeight: '700',
   },
   version: {
     textAlign: 'center',
