@@ -26,7 +26,6 @@ export default function DashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Verificar que el usuario existe
   if (isLoading || !user) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -112,19 +111,22 @@ export default function DashboardScreen({ navigation }) {
       <ScrollView
         style={styles.container}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#667eea']} />
         }
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>¡Hola, {user?.nombre || 'Usuario'}!</Text>
-            <Text style={styles.role}>
+          <View style={styles.headerInfo}>
+            <Text style={styles.headerTitle}>
+              <Icon name="home-outline" size={22} color="#667eea" />{' '}
+              ¡Hola, {user?.nombre || 'Usuario'}!
+            </Text>
+            <Text style={styles.headerSubtitle}>
               {user?.rol === 'maestro' ? 'Maestro' : 'Alumno'}
             </Text>
           </View>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <Icon name="log-out-outline" size={24} color="#ef4444" />
+            <Icon name="log-out-outline" size={22} color="#ef4444" />
           </TouchableOpacity>
         </View>
 
@@ -146,13 +148,13 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </View>
 
-        {/*  BOTÓN DE VIDEOLLAMADA */}
+        {/* Botón de videollamada */}
         <TouchableOpacity
           style={styles.videoCallButton}
           onPress={() => navigation.navigate('Videollamada')}
         >
-          <Icon name="videocam" size={24} color="#fff" />
-          <Text style={styles.videoCallButtonText}> Videollamada</Text>
+          <Icon name="videocam" size={22} color="#fff" />
+          <Text style={styles.videoCallButtonText}>Videollamada</Text>
         </TouchableOpacity>
 
         {/* Equipos */}
@@ -174,7 +176,7 @@ export default function DashboardScreen({ navigation }) {
                 style={styles.equipoCard}
                 onPress={() => navigation.navigate('Equipos')}
               >
-                <View>
+                <View style={styles.equipoCardInfo}>
                   <Text style={styles.equipoNombre}>{equipo.nombre}</Text>
                   <Text style={styles.equipoInfo}>
                     {equipo.total_miembros || 0} miembros
@@ -206,18 +208,23 @@ export default function DashboardScreen({ navigation }) {
                 onPress={() => navigation.navigate('Tareas')}
               >
                 <Text style={styles.tareaTitulo}>{tarea.titulo}</Text>
-                <Text style={styles.tareaEquipo}>{tarea.equipo_nombre}</Text>
+                <View style={styles.fila}>
+                  <Icon name="people-outline" size={14} color="#667eea" />
+                  <Text style={styles.tareaEquipo}>{tarea.equipo_nombre}</Text>
+                </View>
                 {tarea.fecha_limite && (
-                  <Text style={styles.tareaFecha}>
-                    📅 {new Date(tarea.fecha_limite).toLocaleDateString('es-MX')}
-                  </Text>
+                  <View style={styles.fila}>
+                    <Icon name="calendar-outline" size={14} color="#667eea" />
+                    <Text style={styles.tareaFecha}>
+                      {new Date(tarea.fecha_limite).toLocaleDateString('es-MX')}
+                    </Text>
+                  </View>
                 )}
               </TouchableOpacity>
             ))
           )}
         </View>
 
-        {/* Espacio extra al final */}
         <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
@@ -225,6 +232,7 @@ export default function DashboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // NUEVO: fondo unificado
   safeArea: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -244,28 +252,36 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 16,
   },
+  // NUEVO: header unificado con el de EstadiasScreen
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 10,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+    gap: 12,
   },
-  greeting: {
-    fontSize: 20,
+  headerInfo: {
+    flex: 1,
+  },
+  // NUEVO: tipografía del header igual a EstadiasScreen
+  headerTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#1e293b',
   },
-  role: {
-    fontSize: 14,
+  headerSubtitle: {
+    fontSize: 13,
     color: '#94a3b8',
-    marginTop: 4,
+    marginTop: 2,
   },
   logoutButton: {
     padding: 8,
   },
+  // NUEVO: tarjetas de estadística homogéneas con las de EstadiasScreen
   statsContainer: {
     flexDirection: 'row',
     padding: 15,
@@ -274,13 +290,13 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 15,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 2,
   },
   statNumber: {
@@ -293,30 +309,32 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 4,
   },
-  // ✅ ESTILOS DEL BOTÓN DE VIDEOLLAMADA
+  // NUEVO: botón videollamada con paleta unificada (primario)
   videoCallButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2b7a4b',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#667eea',
+    borderRadius: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     marginHorizontal: 15,
     marginBottom: 15,
-    gap: 10,
+    gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
     elevation: 2,
   },
   videoCallButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
   },
   section: {
-    padding: 15,
+    paddingHorizontal: 15,
+    paddingBottom: 15,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -326,30 +344,35 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#1e293b',
   },
   seeAll: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#667eea',
+    fontWeight: '600',
   },
+  // NUEVO: tarjeta de equipo con estilo homogéneo (borderRadius 14, padding 16)
   equipoCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 8,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  equipoCardInfo: {
+    flex: 1,
   },
   equipoNombre: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#1e293b',
   },
   equipoInfo: {
@@ -357,37 +380,51 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 2,
   },
+  // NUEVO: tarjeta de tarea con estilo homogéneo
   tareaCard: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 8,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowRadius: 6,
+    elevation: 2,
   },
   tareaTitulo: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#1e293b',
+    marginBottom: 6,
+  },
+  // NUEVO: filas con icono iguales a EstadiasScreen
+  fila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
   },
   tareaEquipo: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 2,
+    fontSize: 13,
+    color: '#475569',
+    flex: 1,
   },
   tareaFecha: {
     fontSize: 12,
-    color: '#f59e0b',
-    marginTop: 4,
+    color: '#64748b',
+    flex: 1,
   },
   emptyCard: {
     backgroundColor: '#fff',
-    borderRadius: 10,
+    borderRadius: 14,
     padding: 30,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   emptyText: {
     color: '#94a3b8',

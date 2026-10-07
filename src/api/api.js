@@ -5,9 +5,10 @@
 import axios from 'axios';
 
 // IP DE TU COMPUTADORA
-const IP = '192.168.100.14';  //ip de datos 172.20.10.2 172.20.10.4
+
+const IP = '192.168.75.207';  //ip de datos 172.20.10.2 172.20.10.4
 //const IP = '192.168.100.14'; // ip de internet casa 192.168.100.14
-export const BASE_URL = `http://192.168.100.14:5000/api`; // ✅ EXPORTADA
+export const BASE_URL = `http://192.168.75.207:5000/api`; // ✅ EXPORTADA
 
 const api = axios.create({
   baseURL: BASE_URL,

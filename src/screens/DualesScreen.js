@@ -15,35 +15,26 @@ import {
   StatusBar,
   Modal,
   ScrollView,
-  Share,
-  Dimensions
+  Share
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { dualesAPI } from '../api/api';
 
-const { width } = Dimensions.get('window');
-
 export default function DualesScreen({ navigation }) {
   const { user } = useAuth();
   const [duales, setDuales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
-  // Modal de detalle
+
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDual, setSelectedDual] = useState(null);
-  
-  // Estado para el menú de confirmación de eliminación
   const [dualAEliminar, setDualAEliminar] = useState(null);
 
   const esMaestro = user?.rol === 'maestro';
   const esAlumno = user?.rol === 'alumno';
 
-  // ============================================
-  // CARGAR DUALES
-  // ============================================
   const cargarDuales = async () => {
     try {
       setLoading(true);
@@ -71,9 +62,6 @@ export default function DualesScreen({ navigation }) {
     cargarDuales();
   };
 
-  // ============================================
-  // VER DETALLE
-  // ============================================
   const verDetalle = async (dual) => {
     if (dual.asignaciones && dual.alumno) {
       setSelectedDual(dual);
@@ -100,20 +88,10 @@ export default function DualesScreen({ navigation }) {
     setSelectedDual(null);
   };
 
-  // ============================================
-  // FIRMA - NAVEGAR A PANTALLA INDEPENDIENTE
-  // ============================================
   const abrirFirma = (dualId, asignacionIndex) => {
-    console.log('✏️ Navegando a pantalla de firma');
-    navigation.navigate('Firma', { 
-      dualId, 
-      asignacionIndex 
-    });
+    navigation.navigate('Firma', { dualId, asignacionIndex });
   };
 
-  // ============================================
-  // ELIMINAR DUAL
-  // ============================================
   const confirmarEliminar = (dualId, dualNombre) => {
     Alert.alert(
       'Eliminar Dual',
@@ -144,9 +122,6 @@ export default function DualesScreen({ navigation }) {
     }
   };
 
-  // ============================================
-  // GENERAR PDF
-  // ============================================
   const generarPDF = async (dual) => {
     try {
       let contenido = `
@@ -161,9 +136,9 @@ Correo: ${dual.alumno?.email || 'No disponible'}
 
 DATOS DEL DUAL
 --------------------------------------------
-Título: ${dual.titulo}
+Titulo: ${dual.titulo}
 Empresa: ${dual.empresa}
-Descripción: ${dual.descripcion || 'Sin descripción'}
+Descripcion: ${dual.descripcion || 'Sin descripcion'}
 Cuatrimestre: ${dual.cuatrimestre || 'No especificado'}
 Curso: ${dual.curso || 'No especificado'}
 Carrera: ${dual.carrera || 'No especificado'}
@@ -182,7 +157,7 @@ MATERIAS Y FIRMAS
           contenido += `
 Materia: ${a.materia || 'Sin materia'}
 Maestro: ${a.maestro_nombre || 'No asignado'} (${a.maestro_email || 'Sin correo'})
-Firma: ${a.firmado ? '✅ FIRMADO' : '❌ PENDIENTE'}
+Firma: ${a.firmado ? 'FIRMADO' : 'PENDIENTE'}
 --------------------------------------------
 `;
         });
@@ -207,9 +182,6 @@ Generado el: ${new Date().toLocaleString('es-MX')}
     }
   };
 
-  // ============================================
-  // UTILIDADES
-  // ============================================
   const formatearFecha = (fecha) => {
     if (!fecha) return 'Sin fecha';
     const d = new Date(fecha);
@@ -218,25 +190,21 @@ Generado el: ${new Date().toLocaleString('es-MX')}
 
   const getEstadoInfo = (estado) => {
     switch (estado) {
-      case 'activo': return { color: '#10b981', text: 'Activo', icon: 'play-circle' };
-      case 'pendiente': return { color: '#f59e0b', text: 'Pendiente', icon: 'time' };
-      case 'inactivo': return { color: '#94a3b8', text: 'Inactivo', icon: 'stop-circle' };
-      default: return { color: '#94a3b8', text: estado || 'Pendiente', icon: 'time' };
+      case 'activo': return { color: '#059669', bg: '#d1fae5', text: 'Activo', icon: 'play-circle' };
+      case 'pendiente': return { color: '#d97706', bg: '#fef3c7', text: 'Pendiente', icon: 'time' };
+      case 'inactivo': return { color: '#64748b', bg: '#e2e8f0', text: 'Inactivo', icon: 'stop-circle' };
+      default: return { color: '#64748b', bg: '#f1f5f9', text: estado || 'Pendiente', icon: 'time' };
     }
   };
 
-  // ============================================
-  // RENDER TARJETA
-  // ============================================
   const renderDual = ({ item }) => {
     const estadoInfo = getEstadoInfo(item.estado);
     const totalFirmas = item.asignaciones?.length || 0;
     const firmasCompletadas = item.asignaciones?.filter(a => a.firmado).length || 0;
 
-    // Verificar si el usuario es maestro asignado a alguna materia pendiente
     let tieneFirmaPendiente = false;
     let asignacionPendienteIndex = -1;
-    
+
     if (esMaestro && item.asignaciones) {
       item.asignaciones.forEach((a, index) => {
         if (!a.firmado && a.maestro_email === user?.email) {
@@ -254,7 +222,8 @@ Generado el: ${new Date().toLocaleString('es-MX')}
         >
           <View style={styles.dualHeader}>
             <Text style={styles.dualTitulo} numberOfLines={1}>{item.titulo}</Text>
-            <View style={[styles.estadoBadge, { backgroundColor: estadoInfo.color + '20' }]}>
+            {/* NUEVO: badge con bg unificado */}
+            <View style={[styles.estadoBadge, { backgroundColor: estadoInfo.bg }]}>
               <Icon name={estadoInfo.icon} size={12} color={estadoInfo.color} />
               <Text style={[styles.estadoText, { color: estadoInfo.color }]}>
                 {estadoInfo.text}
@@ -262,83 +231,81 @@ Generado el: ${new Date().toLocaleString('es-MX')}
             </View>
           </View>
 
-          <Text style={styles.dualEmpresa}>
-            <Icon name="business-outline" size={14} color="#94a3b8" /> {item.empresa}
-          </Text>
+          {/* NUEVO: filas con icono al estilo EstadiasScreen */}
+          <View style={styles.fila}>
+            <Icon name="business-outline" size={16} color="#667eea" />
+            <Text style={styles.dualEmpresa} numberOfLines={1}>{item.empresa}</Text>
+          </View>
 
-          <View style={styles.dualFechas}>
+          <View style={styles.fila}>
+            <Icon name="calendar-outline" size={16} color="#667eea" />
             <Text style={styles.fechaText}>
-              <Icon name="calendar-outline" size={12} color="#94a3b8" /> Inicio: {formatearFecha(item.fecha_inicio)}
-            </Text>
-            <Text style={styles.fechaText}>
-              <Icon name="calendar-outline" size={12} color="#94a3b8" /> Fin: {formatearFecha(item.fecha_fin)}
+              {formatearFecha(item.fecha_inicio)} - {formatearFecha(item.fecha_fin)}
             </Text>
           </View>
 
           {esMaestro && item.alumno && (
-            <Text style={styles.alumnoText}>
-              <Icon name="person-outline" size={14} color="#94a3b8" /> Alumno: {item.alumno.nombre}
-            </Text>
+            <View style={styles.fila}>
+              <Icon name="person-outline" size={16} color="#667eea" />
+              <Text style={styles.alumnoText} numberOfLines={1}>
+                Alumno: <Text style={{ fontWeight: '700' }}>{item.alumno.nombre}</Text>
+              </Text>
+            </View>
           )}
 
           {esAlumno && (
-            <Text style={styles.firmasText}>
-              <Icon name="document-text-outline" size={14} color="#8b5cf6" /> Firmas: {firmasCompletadas}/{totalFirmas}
-            </Text>
+            <View style={styles.fila}>
+              <Icon name="document-text-outline" size={16} color="#667eea" />
+              <Text style={styles.firmasText}>
+                Firmas: {firmasCompletadas}/{totalFirmas}
+              </Text>
+            </View>
           )}
         </TouchableOpacity>
 
-        {/* ========================================== */}
-        {/* BOTONES EN TARJETA PRINCIPAL */}
-        {/* ========================================== */}
         <View style={styles.dualActions}>
-          {/* Botón Detalles */}
-          <TouchableOpacity style={styles.actionButton} onPress={() => verDetalle(item)}>
-            <Icon name="eye-outline" size={18} color="#667eea" />
-            <Text style={styles.actionText}>Detalles</Text>
+          <TouchableOpacity style={[styles.actionButton, styles.actionVer]} onPress={() => verDetalle(item)}>
+            <Icon name="eye-outline" size={15} color="#4338ca" />
+            <Text style={styles.actionTextVer}>Detalles</Text>
           </TouchableOpacity>
 
-          {/* Botón Firmar (solo maestro asignado a materia pendiente) */}
           {tieneFirmaPendiente && (
             <TouchableOpacity
-              style={[styles.actionButton, styles.firmaButton]}
+              style={[styles.actionButton, styles.actionFirma]}
               onPress={() => abrirFirma(item._id, asignacionPendienteIndex)}
             >
-              <Icon name="create-outline" size={18} color="#8b5cf6" />
-              <Text style={[styles.actionText, styles.firmaText]}>Firmar</Text>
+              <Icon name="create-outline" size={15} color="#4338ca" />
+              <Text style={styles.actionTextVer}>Firmar</Text>
             </TouchableOpacity>
           )}
 
-          {/* Botón Editar (solo maestro creador) */}
           {esMaestro && item.estado !== 'inactivo' && (
             <TouchableOpacity
-              style={[styles.actionButton, styles.editButton]}
+              style={[styles.actionButton, styles.actionEditar]}
               onPress={() => navigation.navigate('CrearDual', { dualId: item._id })}
             >
-              <Icon name="create-outline" size={18} color="#f59e0b" />
-              <Text style={[styles.actionText, styles.editText]}>Editar</Text>
+              <Icon name="create-outline" size={15} color="#d97706" />
+              <Text style={styles.actionTextEditar}>Editar</Text>
             </TouchableOpacity>
           )}
 
-          {/* Botón Eliminar (solo maestro creador) */}
           {esMaestro && (
             <TouchableOpacity
-              style={[styles.actionButton, styles.deleteButton]}
+              style={[styles.actionButton, styles.actionEliminar]}
               onPress={() => confirmarEliminar(item._id, item.titulo)}
             >
-              <Icon name="trash-outline" size={18} color="#ef4444" />
-              <Text style={[styles.actionText, styles.deleteText]}>Eliminar</Text>
+              <Icon name="trash-outline" size={15} color="#dc2626" />
+              <Text style={styles.actionTextEliminar}>Eliminar</Text>
             </TouchableOpacity>
           )}
 
-          {/* Botón PDF (solo alumno) */}
           {esAlumno && (
             <TouchableOpacity
-              style={[styles.actionButton, styles.pdfButton]}
+              style={[styles.actionButton, styles.actionEliminar]}
               onPress={() => generarPDF(item)}
             >
-              <Icon name="document-text-outline" size={18} color="#dc2626" />
-              <Text style={[styles.actionText, styles.pdfText]}>PDF</Text>
+              <Icon name="document-text-outline" size={15} color="#dc2626" />
+              <Text style={styles.actionTextEliminar}>PDF</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -346,12 +313,10 @@ Generado el: ${new Date().toLocaleString('es-MX')}
     );
   };
 
-  // ============================================
-  // RENDER MODAL DETALLE (Simplificado)
-  // ============================================
   const renderModalDetalle = () => {
     if (!selectedDual) return null;
     const dual = selectedDual;
+    const est = getEstadoInfo(dual.estado);
 
     return (
       <Modal
@@ -367,14 +332,14 @@ Generado el: ${new Date().toLocaleString('es-MX')}
                 <Icon name="briefcase-outline" size={20} color="#667eea" /> Detalle del Dual
               </Text>
               <TouchableOpacity onPress={cerrarDetalle}>
-                <Icon name="close-outline" size={24} color="#94a3b8" />
+                <Icon name="close-outline" size={24} color="#64748b" />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               <View style={styles.detalleField}>
-                <Text style={styles.detalleLabel}>Título</Text>
-                <Text style={styles.detalleValor}>{dual.titulo || 'Sin título'}</Text>
+                <Text style={styles.detalleLabel}>Titulo</Text>
+                <Text style={styles.detalleValor}>{dual.titulo || 'Sin titulo'}</Text>
               </View>
 
               <View style={styles.detalleField}>
@@ -384,10 +349,10 @@ Generado el: ${new Date().toLocaleString('es-MX')}
 
               <View style={styles.detalleField}>
                 <Text style={styles.detalleLabel}>Estado</Text>
-                <View style={[styles.estadoBadgeLarge, { backgroundColor: getEstadoInfo(dual.estado).color + '20' }]}>
-                  <Icon name={getEstadoInfo(dual.estado).icon} size={16} color={getEstadoInfo(dual.estado).color} />
-                  <Text style={[styles.estadoTextLarge, { color: getEstadoInfo(dual.estado).color }]}>
-                    {getEstadoInfo(dual.estado).text}
+                <View style={[styles.estadoBadgeLarge, { backgroundColor: est.bg }]}>
+                  <Icon name={est.icon} size={16} color={est.color} />
+                  <Text style={[styles.estadoTextLarge, { color: est.color }]}>
+                    {est.text}
                   </Text>
                 </View>
               </View>
@@ -439,37 +404,38 @@ Generado el: ${new Date().toLocaleString('es-MX')}
 
               {dual.descripcion && (
                 <View style={styles.detalleField}>
-                  <Text style={styles.detalleLabel}>Descripción</Text>
+                  <Text style={styles.detalleLabel}>Descripcion</Text>
                   <Text style={styles.detalleValor}>{dual.descripcion}</Text>
                 </View>
               )}
 
               <View style={styles.firmasSection}>
                 <Text style={styles.firmasSectionTitle}>
-                  <Icon name="document-text-outline" size={18} color="#8b5cf6" /> Materias y Firmas
+                  <Icon name="document-text-outline" size={18} color="#667eea" /> Materias y Firmas
                 </Text>
                 {dual.asignaciones && dual.asignaciones.length > 0 ? (
                   dual.asignaciones.map((a, index) => {
-                    const esMaestroAsignado = a.maestro_email === user?.email;
-                    
                     return (
                       <View key={index} style={styles.asignacionItem}>
                         <View style={styles.asignacionInfo}>
                           <Text style={styles.asignacionMateria}>{a.materia || 'Sin materia'}</Text>
-                          <Text style={styles.asignacionMaestro}>
-                            <Icon name="person-outline" size={12} color="#94a3b8" /> {a.maestro_nombre || 'No asignado'}
-                            {a.maestro_email ? ` (${a.maestro_email})` : ''}
-                          </Text>
+                          <View style={styles.fila}>
+                            <Icon name="person-outline" size={12} color="#94a3b8" />
+                            <Text style={styles.asignacionMaestro}>
+                              {a.maestro_nombre || 'No asignado'}
+                              {a.maestro_email ? ` (${a.maestro_email})` : ''}
+                            </Text>
+                          </View>
                         </View>
                         <View style={[styles.firmaBadge, a.firmado ? styles.firmaFirmado : styles.firmaPendiente]}>
                           {a.firmado ? (
                             <>
-                              <Icon name="checkmark-circle" size={14} color="#10b981" />
+                              <Icon name="checkmark-circle" size={14} color="#059669" />
                               <Text style={styles.firmaTextFirmado}>Firmado</Text>
                             </>
                           ) : (
                             <>
-                              <Icon name="time-outline" size={14} color="#f59e0b" />
+                              <Icon name="time-outline" size={14} color="#d97706" />
                               <Text style={styles.firmaTextPendiente}>Pendiente</Text>
                             </>
                           )}
@@ -497,9 +463,6 @@ Generado el: ${new Date().toLocaleString('es-MX')}
     );
   };
 
-  // ============================================
-  // RENDER PRINCIPAL
-  // ============================================
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -516,16 +479,20 @@ Generado el: ${new Date().toLocaleString('es-MX')}
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
+      {/* NUEVO: header unificado con EstadiasScreen */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          <Icon name="briefcase-outline" size={22} color="#667eea" /> Mis Duales
-        </Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>
+            <Icon name="briefcase-outline" size={22} color="#667eea" />{' '}
+            Mis Duales
+          </Text>
+        </View>
         {esMaestro && (
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => navigation.navigate('CrearDual')}
           >
-            <Icon name="add-outline" size={24} color="#fff" />
+            <Icon name="add-outline" size={22} color="#fff" />
           </TouchableOpacity>
         )}
       </View>
@@ -535,12 +502,12 @@ Generado el: ${new Date().toLocaleString('es-MX')}
         renderItem={renderDual}
         keyExtractor={(item) => item._id}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#667eea']} />
         }
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Icon name="briefcase-outline" size={60} color="#d1d5db" />
+            <Icon name="briefcase-outline" size={60} color="#cbd5e1" />
             <Text style={styles.emptyTitle}>No tienes duales</Text>
             <Text style={styles.emptyText}>
               {esMaestro
@@ -557,6 +524,7 @@ Generado el: ${new Date().toLocaleString('es-MX')}
 }
 
 const styles = StyleSheet.create({
+  // NUEVO: fondo unificado
   safeArea: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -569,43 +537,49 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     color: '#94a3b8',
+    fontSize: 16,
   },
+  // NUEVO: header unificado con EstadiasScreen
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 10,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+    gap: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#1e293b',
   },
+  // NUEVO: botón crear circular 38x38
   createButton: {
     backgroundColor: '#667eea',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   listContent: {
     padding: 15,
     flexGrow: 1,
   },
+  // NUEVO: tarjeta homogénea (borderRadius 14, padding 16, shadow 0.05)
   dualCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowRadius: 6,
+    elevation: 2,
   },
   dualCardActivo: {
     borderLeftWidth: 4,
@@ -615,11 +589,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
+  // NUEVO: tipografía unificada
   dualTitulo: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     color: '#1e293b',
     flex: 1,
     marginRight: 8,
@@ -634,78 +609,81 @@ const styles = StyleSheet.create({
   },
   estadoText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  // NUEVO: filas con icono iguales a EstadiasScreen
+  fila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
   },
   dualEmpresa: {
     fontSize: 14,
-    color: '#64748b',
-    marginBottom: 4,
-  },
-  dualFechas: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 4,
+    color: '#475569',
+    flex: 1,
   },
   fechaText: {
-    fontSize: 12,
-    color: '#94a3b8',
+    fontSize: 13,
+    color: '#64748b',
+    flex: 1,
   },
   alumnoText: {
     fontSize: 13,
-    color: '#64748b',
-    marginTop: 2,
+    color: '#475569',
+    flex: 1,
   },
   firmasText: {
     fontSize: 13,
-    color: '#8b5cf6',
-    marginTop: 2,
+    color: '#475569',
+    flex: 1,
   },
+  // NUEVO: acciones con separador superior igual a EstadiasScreen
   dualActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 14,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
-    gap: 6,
+    gap: 8,
   },
+  // NUEVO: botones de acción homogéneos
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#f1f5f9',
-    gap: 4,
+    gap: 5,
   },
-  actionText: {
-    fontSize: 11,
-    color: '#64748b',
-    fontWeight: '500',
+  actionVer: {
+    backgroundColor: '#e0e7ff',
   },
-  firmaButton: {
-    backgroundColor: '#f0f0ff',
+  actionTextVer: {
+    fontSize: 12,
+    color: '#4338ca',
+    fontWeight: '700',
   },
-  firmaText: {
-    color: '#8b5cf6',
+  actionFirma: {
+    backgroundColor: '#e0e7ff',
   },
-  editButton: {
-    backgroundColor: '#fffbeb',
+  actionEditar: {
+    backgroundColor: '#fef3c7',
   },
-  editText: {
-    color: '#f59e0b',
+  actionTextEditar: {
+    fontSize: 12,
+    color: '#d97706',
+    fontWeight: '700',
   },
-  deleteButton: {
-    backgroundColor: '#fef2f2',
+  actionEliminar: {
+    backgroundColor: '#fee2e2',
   },
-  deleteText: {
-    color: '#ef4444',
-  },
-  pdfButton: {
-    backgroundColor: '#fef2f2',
-  },
-  pdfText: {
+  actionTextEliminar: {
+    fontSize: 12,
     color: '#dc2626',
+    fontWeight: '700',
   },
   emptyContainer: {
     flex: 1,
@@ -715,7 +693,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#1e293b',
     marginTop: 15,
   },
@@ -724,7 +702,9 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 5,
     textAlign: 'center',
+    paddingHorizontal: 30,
   },
+  // NUEVO: modal con borderRadius 20 unificado
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -749,7 +729,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#1e293b',
   },
   modalBody: {
@@ -762,7 +742,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#94a3b8',
     textTransform: 'uppercase',
-    fontWeight: '600',
+    fontWeight: '700',
     marginBottom: 2,
   },
   detalleValor: {
@@ -788,7 +768,7 @@ const styles = StyleSheet.create({
   },
   estadoTextLarge: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   firmasSection: {
     marginTop: 8,
@@ -798,7 +778,7 @@ const styles = StyleSheet.create({
   },
   firmasSectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#1e293b',
     marginBottom: 10,
   },
@@ -818,12 +798,14 @@ const styles = StyleSheet.create({
   },
   asignacionMateria: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '700',
     color: '#1e293b',
+    marginBottom: 4,
   },
   asignacionMaestro: {
     fontSize: 12,
     color: '#94a3b8',
+    flex: 1,
   },
   firmaBadge: {
     flexDirection: 'row',
@@ -842,24 +824,12 @@ const styles = StyleSheet.create({
   firmaTextFirmado: {
     fontSize: 11,
     color: '#059669',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   firmaTextPendiente: {
     fontSize: 11,
     color: '#d97706',
-    fontWeight: '600',
-  },
-  firmarButton: {
-    backgroundColor: '#667eea',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: 4,
-  },
-  firmarButtonText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   sinAsignaciones: {
     color: '#94a3b8',
@@ -880,27 +850,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 10,
     gap: 6,
   },
-  modalEditButton: {
-    backgroundColor: '#f59e0b',
-  },
-  modalPdfButton: {
-    backgroundColor: '#dc2626',
-  },
   modalCloseButton: {
-    backgroundColor: '#f1f5f9',
-  },
-  modalActionText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 13,
+    backgroundColor: '#e0e7ff',
   },
   modalCloseText: {
-    color: '#64748b',
-    fontWeight: '600',
+    color: '#4338ca',
+    fontWeight: '700',
     fontSize: 13,
   },
 });
