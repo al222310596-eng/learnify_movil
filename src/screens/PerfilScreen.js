@@ -107,27 +107,6 @@ export default function PerfilScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* NUEVO: estadisticas como tarjeta homogénea */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.statsTitle}>
-            <Icon name="stats-chart-outline" size={18} color="#667eea" />{' '}
-            Estadísticas
-          </Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>Equipos</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>Tareas</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>Entregas</Text>
-            </View>
-          </View>
-        </View>
 
         {/* NUEVO: botón de logout con estilo de botón unificado */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>

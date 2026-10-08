@@ -15,6 +15,7 @@ import {
   StatusBar,
   Modal,
   ScrollView,
+  TextInput,
   Share
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,6 +32,9 @@ export default function DualesScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDual, setSelectedDual] = useState(null);
   const [dualAEliminar, setDualAEliminar] = useState(null);
+  const [filtrados, setFiltrados] = useState([]);       // la lista ya filtrada
+  const [filtroEstado, setFiltroEstado] = useState('todos'); // chip seleccionado
+  const [busqueda, setBusqueda] = useState('');          // texto del buscador
 
   const esMaestro = user?.rol === 'maestro';
   const esAlumno = user?.rol === 'alumno';
@@ -56,6 +60,33 @@ export default function DualesScreen({ navigation }) {
   useEffect(() => {
     cargarDuales();
   }, []);
+
+
+  // Cada vez que cambie la lista, el chip o el texto, se vuelve a filtrar
+useEffect(() => {
+  aplicarFiltros();
+}, [duales, filtroEstado, busqueda]);
+
+const aplicarFiltros = () => {
+  let resultado = [...duales];
+
+  // Solo maestros pueden filtrar por estado
+  if (esMaestro && filtroEstado !== 'todos') {
+    resultado = resultado.filter(d => d.estado === filtroEstado);
+  }
+
+  // Búsqueda por título, empresa o nombre del alumno
+  if (busqueda.trim()) {
+    const q = busqueda.toLowerCase();
+    resultado = resultado.filter(d =>
+      (d.titulo || '').toLowerCase().includes(q) ||
+      (d.empresa || '').toLowerCase().includes(q) ||
+      (d.alumno?.nombre || '').toLowerCase().includes(q)
+    );
+  }
+
+  setFiltrados(resultado);
+};
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -463,6 +494,14 @@ Generado el: ${new Date().toLocaleString('es-MX')}
     );
   };
 
+
+  const estados = [
+  { key: 'todos', label: 'Todos' },
+  { key: 'activo', label: 'Activo' },
+  { key: 'pendiente', label: 'Pendiente' },
+  { key: 'inactivo', label: 'Inactivo' },
+];
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -497,8 +536,49 @@ Generado el: ${new Date().toLocaleString('es-MX')}
         )}
       </View>
 
+      {/* Barra de búsqueda */}
+<View style={styles.searchContainer}>
+  <Icon name="search-outline" size={20} color="#94a3b8" />
+  <TextInput
+    style={styles.searchInput}
+    placeholder="Buscar por título, empresa o alumno..."
+    placeholderTextColor="#94a3b8"
+    value={busqueda}
+    onChangeText={setBusqueda}
+  />
+  {busqueda.length > 0 && (
+    <TouchableOpacity onPress={() => setBusqueda('')}>
+      <Icon name="close-circle" size={20} color="#94a3b8" />
+    </TouchableOpacity>
+  )}
+</View>
+
+{/* Chips de estado - SOLO MAESTRO */}
+{esMaestro && (
+  <View style={styles.chipsWrapper}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.chipsContainer}
+      style={styles.chipsScroll}
+    >
+      {estados.map((e) => (
+        <TouchableOpacity
+          key={e.key}
+          style={[styles.chip, filtroEstado === e.key && styles.chipActivo]}
+          onPress={() => setFiltroEstado(e.key)}
+        >
+          <Text style={[styles.chipText, filtroEstado === e.key && styles.chipTextActivo]}>
+            {e.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  </View>
+)}
+
       <FlatList
-        data={duales}
+        data={filtrados}
         renderItem={renderDual}
         keyExtractor={(item) => item._id}
         refreshControl={
@@ -508,11 +588,15 @@ Generado el: ${new Date().toLocaleString('es-MX')}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Icon name="briefcase-outline" size={60} color="#cbd5e1" />
-            <Text style={styles.emptyTitle}>No tienes duales</Text>
+            <Text style={styles.emptyTitle}>
+              {duales.length === 0 ? 'No tienes duales' : 'Sin resultados'}
+            </Text>
             <Text style={styles.emptyText}>
-              {esMaestro
-                ? 'Crea un nuevo dual para empezar'
-                : 'Espera a que te asignen un dual'}
+              {duales.length === 0
+                ? (esMaestro
+                    ? 'Crea un nuevo dual para empezar'
+                    : 'Espera a que te asignen un dual')
+                : 'No hay resultados con los filtros actuales'}
             </Text>
           </View>
         }
@@ -862,4 +946,42 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
+
+    // Filtros (iguales a EstadiasScreen)
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: 15,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 8,
+  },
+  searchInput: { flex: 1, paddingVertical: 10, fontSize: 15, color: '#1e293b' },
+
+  chipsWrapper: { height: 60, marginTop: 8 },
+  chipsScroll: { flexGrow: 0 },
+  chipsContainer: {
+    paddingHorizontal: 15,
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 8,
+  },
+  chip: {
+    height: 36,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  chipActivo: { backgroundColor: '#667eea', borderColor: '#667eea' },
+  chipText: { fontSize: 13, color: '#64748b', fontWeight: '500' },
+  chipTextActivo: { color: '#fff', fontWeight: '600' },
 });
