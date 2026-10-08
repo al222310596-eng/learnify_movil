@@ -2,7 +2,7 @@
 // PerfilScreen - Perfil del usuario
 // ============================================
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,14 +11,18 @@ import {
   Alert,
   ScrollView,
   StatusBar,
-  ActivityIndicator
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/Ionicons';
+import EditarPerfilModal from '../components/EditarPerfilModal';
+import { BASE_URL } from '../api/api';
 
 export default function PerfilScreen() {
   const { user, isLoading, logout } = useAuth();
+  const [modalVisible, setModalVisible] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -36,11 +40,18 @@ export default function PerfilScreen() {
               console.error('Error en logout:', error);
               Alert.alert('Error', 'Ocurrió un error al cerrar sesión');
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
+
+  // Construir URL completa de la foto
+  const fotoUrl = user?.foto_url
+    ? user.foto_url.startsWith('http')
+      ? user.foto_url
+      : `${BASE_URL.replace('/api', '')}${user.foto_url}`
+    : null;
 
   if (isLoading || !user) {
     return (
@@ -59,14 +70,18 @@ export default function PerfilScreen() {
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
       <ScrollView style={styles.container}>
-        {/* NUEVO: header unificado con EstadiasScreen */}
+        {/* Header unificado */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user.nombre?.charAt(0)?.toUpperCase() || 'U'}
-              </Text>
-            </View>
+            {fotoUrl ? (
+              <Image source={{ uri: fotoUrl }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {user.nombre?.charAt(0)?.toUpperCase() || 'U'}
+                </Text>
+              </View>
+            )}
           </View>
           <Text style={styles.nombre}>{user.nombre || 'Usuario'}</Text>
           <View style={styles.rolBadge}>
@@ -82,7 +97,10 @@ export default function PerfilScreen() {
 
         {/* Opciones */}
         <View style={styles.optionsContainer}>
-          <TouchableOpacity style={styles.optionItem}>
+          <TouchableOpacity
+            style={styles.optionItem}
+            onPress={() => setModalVisible(true)}
+          >
             <Icon name="person-outline" size={22} color="#667eea" />
             <Text style={styles.optionText}>Editar perfil</Text>
             <Icon name="chevron-forward-outline" size={20} color="#94a3b8" />
@@ -107,8 +125,7 @@ export default function PerfilScreen() {
           </TouchableOpacity>
         </View>
 
-
-        {/* NUEVO: botón de logout con estilo de botón unificado */}
+        {/* Botón de logout */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Icon name="log-out-outline" size={20} color="#dc2626" />
           <Text style={styles.logoutText}>Cerrar sesión</Text>
@@ -116,12 +133,17 @@ export default function PerfilScreen() {
 
         <Text style={styles.version}>Learnify v1.0.0</Text>
       </ScrollView>
+
+      {/* Modal de edición de perfil */}
+      <EditarPerfilModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  // NUEVO: fondo unificado
   safeArea: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -141,7 +163,6 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 16,
   },
-  // NUEVO: header unificado con EstadiasScreen (misma paleta y bordes)
   header: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
@@ -154,7 +175,6 @@ const styles = StyleSheet.create({
   avatarContainer: {
     marginBottom: 15,
   },
-  // NUEVO: avatar con paleta primaria
   avatar: {
     width: 80,
     height: 80,
@@ -168,13 +188,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  // NUEVO: tipografía unificada
   nombre: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1e293b',
   },
-  // NUEVO: badge rol con paleta primaria suave
   rolBadge: {
     backgroundColor: '#e0e7ff',
     paddingHorizontal: 16,
@@ -197,7 +215,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#94a3b8',
   },
-  // NUEVO: opciones como tarjeta homogénea
   optionsContainer: {
     backgroundColor: '#fff',
     marginTop: 15,
@@ -227,43 +244,6 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     fontWeight: '500',
   },
-  // NUEVO: estadisticas como tarjeta homogénea
-  statsContainer: {
-    backgroundColor: '#fff',
-    marginTop: 15,
-    marginHorizontal: 15,
-    padding: 16,
-    borderRadius: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  statsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 15,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#667eea',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#94a3b8',
-    marginTop: 4,
-  },
-  // NUEVO: botón de cerrar sesión unificado como botón con borde
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',

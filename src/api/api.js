@@ -564,5 +564,57 @@ export const estadiasAPI = {
   },
 
 };
+// ============================================
+// USUARIOS / PERFIL
+// ============================================
 
+export const usuariosAPI = {
+  // Actualizar datos del perfil (nombre, email, password)
+  actualizar: async (usuarioId, datos) => {
+    try {
+      const response = await api.put('/usuarios/actualizar', {
+        usuario_id: usuarioId,
+        ...datos,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al actualizar perfil:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al actualizar' };
+    }
+  },
+
+  // Subir foto de perfil
+  subirFoto: async (usuarioId, imagen) => {
+    try {
+      const formData = new FormData();
+      formData.append('usuario_id', usuarioId);
+      formData.append('foto', {
+        uri: imagen.uri,
+        name: imagen.fileName || 'perfil.jpg',
+        type: imagen.mimeType || 'image/jpeg',
+      });
+
+      const response = await api.post('/usuarios/subir-foto', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al subir foto:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al subir foto' };
+    }
+  },
+
+  // Eliminar foto de perfil
+  eliminarFoto: async (usuarioId) => {
+    try {
+      const response = await api.delete('/usuarios/eliminar-foto', {
+        data: { usuario_id: usuarioId },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al eliminar foto:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar foto' };
+    }
+  },
+};
 export default api;
