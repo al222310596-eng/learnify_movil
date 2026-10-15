@@ -16,18 +16,17 @@ import {
   StatusBar
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { equiposAPI, tareasAPI, minutasAPI } from '../api/api';
+import { equiposAPI, tareasAPI } from '../api/api';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function DashboardScreen({ navigation }) {
   const { user, isLoading, logout } = useAuth();
   const [equipos, setEquipos] = useState([]);
   const [tareas, setTareas] = useState([]);
-  const [minutas, setMinutas] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Verificar que el usuario existe
   if (isLoading || !user) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -47,7 +46,7 @@ export default function DashboardScreen({ navigation }) {
   const cargarDatos = async () => {
     try {
       setLoading(true);
-
+      
       const equiposResult = await equiposAPI.getEquipos(user._id);
       if (equiposResult.exito) {
         setEquipos(equiposResult.equipos || []);
@@ -63,12 +62,6 @@ export default function DashboardScreen({ navigation }) {
         if (tareasResult.exito) {
           setTareas(tareasResult.tareas || []);
         }
-      }
-
-      // Cargar minutas
-      const minutasResult = await minutasAPI.getMinutas(user._id);
-      if (minutasResult.exito) {
-        setMinutas(minutasResult.minutas || []);
       }
     } catch (error) {
       console.error('Error al cargar datos:', error);
@@ -119,22 +112,19 @@ export default function DashboardScreen({ navigation }) {
       <ScrollView
         style={styles.container}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#667eea']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerInfo}>
-            <Text style={styles.headerTitle}>
-              <Icon name="home-outline" size={22} color="#667eea" />{' '}
-              ¡Hola, {user?.nombre || 'Usuario'}!
-            </Text>
-            <Text style={styles.headerSubtitle}>
+          <View>
+            <Text style={styles.greeting}>¡Hola, {user?.nombre || 'Usuario'}!</Text>
+            <Text style={styles.role}>
               {user?.rol === 'maestro' ? 'Maestro' : 'Alumno'}
             </Text>
           </View>
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <Icon name="log-out-outline" size={22} color="#ef4444" />
+            <Icon name="log-out-outline" size={24} color="#ef4444" />
           </TouchableOpacity>
         </View>
 
@@ -154,79 +144,16 @@ export default function DashboardScreen({ navigation }) {
             </Text>
             <Text style={styles.statLabel}>Entregas</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{minutas.length}</Text>
-            <Text style={styles.statLabel}>Minutas</Text>
-          </View>
         </View>
 
-        {/* Botón de videollamada */}
+        {/*  BOTÓN DE VIDEOLLAMADA */}
         <TouchableOpacity
           style={styles.videoCallButton}
           onPress={() => navigation.navigate('Videollamada')}
         >
-          <Icon name="videocam" size={22} color="#fff" />
-          <Text style={styles.videoCallButtonText}>Videollamada</Text>
+          <Icon name="videocam" size={24} color="#fff" />
+          <Text style={styles.videoCallButtonText}> Videollamada</Text>
         </TouchableOpacity>
-
-        {/* Sección de Minutas */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Mis Minutas</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('MisMinutas')}>
-              <Text style={styles.seeAll}>Ver todas</Text>
-            </TouchableOpacity>
-          </View>
-
-          {minutas.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>No tienes minutas aún</Text>
-              <TouchableOpacity
-                style={styles.btnCrearMinuta}
-                onPress={() => navigation.navigate('CrearMinuta')}
-              >
-                <Icon name="add-circle-outline" size={18} color="#fff" />
-                <Text style={styles.btnCrearMinutaText}>Crear minuta</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            minutas.slice(0, 3).map((minuta, index) => (
-              <TouchableOpacity
-                key={minuta._id || index}
-                style={styles.minutaCard}
-                onPress={() =>
-                  navigation.navigate('DetalleMinuta', { minuta })
-                }
-              >
-                <View style={styles.minutaCardInfo}>
-                  <Text style={styles.minutaAsunto} numberOfLines={1}>
-                    {minuta.asunto}
-                  </Text>
-
-                  <View style={styles.fila}>
-                    <Icon name="calendar-outline" size={14} color="#667eea" />
-                    <Text style={styles.minutaFecha}>
-                      {minuta.fecha
-                        ? new Date(minuta.fecha + 'T12:00:00').toLocaleDateString('es-MX')
-                        : ''}
-                      {minuta.hora ? ` · ${minuta.hora}` : ''}
-                    </Text>
-                  </View>
-
-                  <View style={styles.fila}>
-                    <Icon name="people-outline" size={14} color="#667eea" />
-                    <Text style={styles.minutaInfo}>
-                      {minuta.total_asistentes ?? minuta.asistentes?.length ?? 0} asistentes ·{' '}
-                      {minuta.total_acuerdos ?? minuta.acuerdos?.length ?? 0} acuerdos
-                    </Text>
-                  </View>
-                </View>
-
-                <Icon name="chevron-forward-outline" size={20} color="#94a3b8" />
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
 
         {/* Equipos */}
         <View style={styles.section}>
@@ -242,12 +169,12 @@ export default function DashboardScreen({ navigation }) {
             </View>
           ) : (
             equipos.slice(0, 3).map((equipo, index) => (
-              <TouchableOpacity
-                key={index}
+              <TouchableOpacity 
+                key={index} 
                 style={styles.equipoCard}
                 onPress={() => navigation.navigate('Equipos')}
               >
-                <View style={styles.equipoCardInfo}>
+                <View>
                   <Text style={styles.equipoNombre}>{equipo.nombre}</Text>
                   <Text style={styles.equipoInfo}>
                     {equipo.total_miembros || 0} miembros
@@ -279,23 +206,18 @@ export default function DashboardScreen({ navigation }) {
                 onPress={() => navigation.navigate('Tareas')}
               >
                 <Text style={styles.tareaTitulo}>{tarea.titulo}</Text>
-                <View style={styles.fila}>
-                  <Icon name="people-outline" size={14} color="#667eea" />
-                  <Text style={styles.tareaEquipo}>{tarea.equipo_nombre}</Text>
-                </View>
+                <Text style={styles.tareaEquipo}>{tarea.equipo_nombre}</Text>
                 {tarea.fecha_limite && (
-                  <View style={styles.fila}>
-                    <Icon name="calendar-outline" size={14} color="#667eea" />
-                    <Text style={styles.tareaFecha}>
-                      {new Date(tarea.fecha_limite).toLocaleDateString('es-MX')}
-                    </Text>
-                  </View>
+                  <Text style={styles.tareaFecha}>
+                    📅 {new Date(tarea.fecha_limite).toLocaleDateString('es-MX')}
+                  </Text>
                 )}
               </TouchableOpacity>
             ))
           )}
         </View>
 
+        {/* Espacio extra al final */}
         <View style={{ height: 20 }} />
       </ScrollView>
     </SafeAreaView>
@@ -324,27 +246,22 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 10,
+    padding: 20,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
-    gap: 12,
   },
-  headerInfo: {
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: 18,
+  greeting: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1e293b',
   },
-  headerSubtitle: {
-    fontSize: 13,
+  role: {
+    fontSize: 14,
     color: '#94a3b8',
-    marginTop: 2,
+    marginTop: 4,
   },
   logoutButton: {
     padding: 8,
@@ -352,55 +269,54 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     padding: 15,
-    gap: 8,
+    gap: 10,
   },
   statCard: {
     flex: 1,
     backgroundColor: '#fff',
-    borderRadius: 14,
-    paddingVertical: 12,
+    borderRadius: 12,
+    padding: 15,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowRadius: 4,
     elevation: 2,
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#667eea',
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#94a3b8',
     marginTop: 4,
   },
+  // ✅ ESTILOS DEL BOTÓN DE VIDEOLLAMADA
   videoCallButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#667eea',
-    borderRadius: 10,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    backgroundColor: '#2b7a4b',
+    borderRadius: 12,
+    padding: 16,
     marginHorizontal: 15,
     marginBottom: 15,
-    gap: 8,
+    gap: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 2,
   },
   videoCallButtonText: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
   },
   section: {
-    paddingHorizontal: 15,
-    paddingBottom: 15,
+    padding: 15,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -410,34 +326,30 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#1e293b',
   },
   seeAll: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#667eea',
-    fontWeight: '600',
   },
   equipoCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  equipoCardInfo: {
-    flex: 1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   equipoNombre: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '500',
     color: '#1e293b',
   },
   equipoInfo: {
@@ -447,103 +359,38 @@ const styles = StyleSheet.create({
   },
   tareaCard: {
     backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowRadius: 2,
+    elevation: 1,
   },
   tareaTitulo: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '500',
     color: '#1e293b',
-    marginBottom: 6,
-  },
-  fila: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
   },
   tareaEquipo: {
-    fontSize: 13,
-    color: '#475569',
-    flex: 1,
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 2,
   },
   tareaFecha: {
     fontSize: 12,
-    color: '#64748b',
-    flex: 1,
+    color: '#f59e0b',
+    marginTop: 4,
   },
   emptyCard: {
     backgroundColor: '#fff',
-    borderRadius: 14,
+    borderRadius: 10,
     padding: 30,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
   },
   emptyText: {
     color: '#94a3b8',
     fontSize: 14,
-  },
-
-  // Estilos exclusivos de minutas
-  minutaCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#667eea',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  minutaCardInfo: {
-    flex: 1,
-    marginRight: 8,
-  },
-  minutaAsunto: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 6,
-  },
-  minutaFecha: {
-    fontSize: 12,
-    color: '#64748b',
-    flex: 1,
-  },
-  minutaInfo: {
-    fontSize: 12,
-    color: '#64748b',
-    flex: 1,
-  },
-  btnCrearMinuta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#667eea',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginTop: 14,
-  },
-  btnCrearMinutaText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 13,
   },
 });

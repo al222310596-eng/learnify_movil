@@ -34,18 +34,8 @@ import CalificarTareaScreen from '../screens/CalificarTareaScreen';
 import DetalleTareaScreen from '../screens/DetalleTareaScreen';
 import FirmaScreen from '../screens/FirmaScreen';
 
-// Pantallas de Estadías
-import CrearEstadiaScreen from '../screens/CrearEstadiaScreen';
-import RegistrarHorasScreen from '../screens/RegistrarHorasScreen';
-import DetalleEstadiaScreen from '../screens/DetalleEstadiaScreen';
-
 // Importar la pantalla de videollamada
 import VideollamadaScreen from '../screens/VideollamadaScreen';
-
-//  NUEVO: Pantallas de Minutas
-import MisMinutasScreen from '../screens/MisMinutasScreen';
-import CrearMinutaScreen from '../screens/CrearMinutaScreen';
-import DetalleMinutaScreen from '../screens/DetalleMinutaScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -81,8 +71,6 @@ function MainTabs() {
             iconName = focused ? 'list' : 'list-outline';
           } else if (route.name === 'Duales') {
             iconName = focused ? 'briefcase' : 'briefcase-outline';
-          } else if (route.name === 'Estadias') {
-            iconName = focused ? 'business' : 'business-outline';
           } else if (route.name === 'Perfil') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -92,13 +80,13 @@ function MainTabs() {
         tabBarInactiveTintColor: '#94a3b8',
         headerShown: false,
         tabBarStyle: {
-          height: 62,
-          paddingBottom: 6,
-          paddingTop: 6,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
         tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '600',
+          fontSize: 11,
+          fontWeight: '500',
         },
       })}
     >
@@ -106,7 +94,6 @@ function MainTabs() {
       <Tab.Screen name="Equipos" component={EquiposScreen} />
       <Tab.Screen name="Tareas" component={TareasScreen} />
       <Tab.Screen name="Duales" component={DualesScreen} />
-      <Tab.Screen name="Estadias" component={EstadiasScreen} options={{ title: 'Estadías' }} />
       <Tab.Screen name="Perfil" component={PerfilScreen} />
     </Tab.Navigator>
   );
@@ -127,9 +114,7 @@ function MainStack() {
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="Chat" component={ChatScreen} />
       <Stack.Screen name="Analisis" component={AnalisisScreen} />
-      <Stack.Screen name="CrearEstadia" component={CrearEstadiaScreen} />
-      <Stack.Screen name="RegistrarHoras" component={RegistrarHorasScreen} />
-      <Stack.Screen name="DetalleEstadia" component={DetalleEstadiaScreen} />
+      <Stack.Screen name="Estadias" component={EstadiasScreen} />
       <Stack.Screen name="CrearDual" component={CrearDualScreen} />
       <Stack.Screen name="CrearEquipo" component={CrearEquipoScreen} />
       <Stack.Screen name="CrearTarea" component={CrearTareaScreen} />
@@ -138,11 +123,6 @@ function MainStack() {
       <Stack.Screen name="DetalleTarea" component={DetalleTareaScreen} />
       <Stack.Screen name="Videollamada" component={VideollamadaScreen} />
       <Stack.Screen name="Firma" component={FirmaScreen} />
-
-      {/* 👇 NUEVO: pantallas de minutas */}
-      <Stack.Screen name="MisMinutas" component={MisMinutasScreen} />
-      <Stack.Screen name="CrearMinuta" component={CrearMinutaScreen} />
-      <Stack.Screen name="DetalleMinuta" component={DetalleMinutaScreen} />
     </Stack.Navigator>
   );
 }
@@ -154,6 +134,7 @@ function MainStack() {
 export default function AppNavigator() {
   const { isAuthenticated, isLoading, isLoggingOut } = useAuth();
 
+  // ✅ Mostrar carga durante el logout
   if (isLoading || isLoggingOut) {
     return <LoadingScreen />;
   }
@@ -166,11 +147,13 @@ export default function AppNavigator() {
       }}
     >
       {!isAuthenticated ? (
+        // Stack de autenticación - Login y Register en el raíz
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
         </>
       ) : (
+        // Stack principal
         <Stack.Screen name="Main" component={MainStack} />
       )}
     </Stack.Navigator>

@@ -13,11 +13,9 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.al222310596.learnifymobile"
+      "supportsTablet": true
     },
     "android": {
-      "package": "com.al222310596.learnifymobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -29,8 +27,7 @@
     },
     "plugins": [
       "expo-font",
-      "expo-web-browser",
-      "expo-sharing"
+      "expo-web-browser"
     ]
   }
 }

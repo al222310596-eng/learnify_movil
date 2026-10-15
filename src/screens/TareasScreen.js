@@ -105,11 +105,11 @@ export default function TareasScreen({ navigation }) {
         
         <View style={styles.tareaMeta}>
           <Text style={styles.tareaEquipo}>
-            <Icon name="people-outline" size={14} color="#667eea" /> {item.equipo_nombre || 'Sin equipo'}
+            <Icon name="people-outline" size={14} /> {item.equipo_nombre || 'Sin equipo'}
           </Text>
           {item.fecha_limite && (
             <Text style={styles.tareaFecha}>
-              <Icon name="calendar-outline" size={14} color="#667eea" /> {new Date(item.fecha_limite).toLocaleDateString('es-MX')}
+              📅 {new Date(item.fecha_limite).toLocaleDateString('es-MX')}
             </Text>
           )}
         </View>
@@ -120,8 +120,8 @@ export default function TareasScreen({ navigation }) {
             style={[styles.accionButton, styles.verButton]}
             onPress={() => verDetalleTarea(item._id)}
           >
-            <Icon name="eye-outline" size={15} color="#4338ca" />
-            <Text style={styles.verText}>Ver</Text>
+            <Icon name="eye-outline" size={16} color="#667eea" />
+            <Text style={styles.accionButtonText}>Ver</Text>
           </TouchableOpacity>
 
           {/* Botón Calificar (solo maestros líderes) */}
@@ -130,8 +130,8 @@ export default function TareasScreen({ navigation }) {
               style={[styles.accionButton, styles.calificarButton]}
               onPress={() => calificarTarea(item._id)}
             >
-              <Icon name="star-outline" size={15} color="#d97706" />
-              <Text style={styles.calificarText}>Calificar</Text>
+              <Icon name="star-outline" size={16} color="#f59e0b" />
+              <Text style={[styles.accionButtonText, styles.calificarText]}>Calificar</Text>
             </TouchableOpacity>
           )}
 
@@ -141,8 +141,8 @@ export default function TareasScreen({ navigation }) {
               style={[styles.accionButton, styles.entregarButton]}
               onPress={() => entregarTarea(item._id, item.equipo_id)}
             >
-              <Icon name="cloud-upload-outline" size={15} color="#fff" />
-              <Text style={styles.entregarText}>Entregar</Text>
+              <Icon name="cloud-upload-outline" size={16} color="#10b981" />
+              <Text style={[styles.accionButtonText, styles.entregarText]}>Entregar</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -167,10 +167,7 @@ export default function TareasScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            <Icon name="list-outline" size={22} color="#667eea" />{' '}
-            Mis Tareas
-          </Text>
+          <Text style={styles.headerTitle}>Mis Tareas</Text>
           <Text style={styles.headerSubtitle}>
             {user.rol === 'alumno' ? 'Tareas asignadas' : 'Tareas de tus equipos'}
           </Text>
@@ -181,11 +178,11 @@ export default function TareasScreen({ navigation }) {
           renderItem={renderTarea}
           keyExtractor={(item) => item._id}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#667eea']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Icon name="checkmark-done-circle-outline" size={60} color="#cbd5e1" />
+              <Icon name="checkmark-done-circle-outline" size={60} color="#d1d5db" />
               <Text style={styles.emptyTitle}>¡Sin tareas pendientes!</Text>
               <Text style={styles.emptyText}>
                 {user.rol === 'alumno' 
@@ -202,7 +199,6 @@ export default function TareasScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  // NUEVO: fondo unificado con las demas pantallas
   safeArea: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -219,154 +215,123 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     color: '#94a3b8',
-    fontSize: 16,
   },
-  // NUEVO: header unificado con EstadiasScreen
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 10,
+    padding: 20,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
-    gap: 12,
-    flexDirection: 'column',
-    alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1e293b',
   },
   headerSubtitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#94a3b8',
-    marginTop: 2,
+    marginTop: 4,
   },
   listContent: {
     padding: 15,
     flexGrow: 1,
   },
-  // NUEVO: tarjeta homogenea (borderRadius 14, padding 16, shadow 0.05, elevation 2) igual a EstadiasScreen
   tareaCard: {
     backgroundColor: '#fff',
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  // NUEVO: borde rojo mas oscuro para que combine con paleta
   tareaVencida: {
     borderLeftWidth: 4,
-    borderLeftColor: '#dc2626',
+    borderLeftColor: '#ef4444',
   },
-  // NUEVO: header de tarjeta con margen compacto
   tareaHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
   },
-  // NUEVO: tipografia de titulo consistente (17/700)
   tareaTitulo: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#1e293b',
     flex: 1,
   },
-  // NUEVO: badge vencida con paleta unificada
   vencidaBadge: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: '#fef2f2',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
   vencidaText: {
-    color: '#dc2626',
+    color: '#ef4444',
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  // NUEVO: descripcion con tipografia consistente y margen compacto
   tareaDescripcion: {
     fontSize: 14,
-    color: '#475569',
-    marginBottom: 10,
+    color: '#64748b',
+    marginTop: 6,
   },
-  // NUEVO: meta unificada (sin separador extra para evitar espacio)
   tareaMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
   },
-  // NUEVO: texto de equipo con tipografia consistente
   tareaEquipo: {
-    fontSize: 13,
-    color: '#475569',
-    flexShrink: 1,
+    fontSize: 12,
+    color: '#94a3b8',
   },
-  // NUEVO: fecha con color de texto secundario (no ambar que desentona)
   tareaFecha: {
-    fontSize: 13,
-    color: '#475569',
-    flexShrink: 1,
+    fontSize: 12,
+    color: '#f59e0b',
   },
-  // NUEVO: acciones con separador superior y espaciado uniforme
   accionesContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 0,
-    paddingTop: 12,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#f1f5f9',
     gap: 8,
   },
-  // NUEVO: botones de accion homogeneos con EstadiasScreen
   accionButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    padding: 10,
     borderRadius: 8,
-    gap: 5,
+    gap: 6,
   },
-  // NUEVO: boton Ver con paleta primaria suave (igual a EstadiasScreen)
   verButton: {
-    backgroundColor: '#e0e7ff',
+    backgroundColor: '#f0f0ff',
   },
-  verText: {
-    fontSize: 12,
-    color: '#4338ca',
-    fontWeight: '700',
-  },
-  // NUEVO: boton Calificar con paleta ambar suave
   calificarButton: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#fffbeb',
+  },
+  entregarButton: {
+    backgroundColor: '#ecfdf5',
+  },
+  accionButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#64748b',
   },
   calificarText: {
-    fontSize: 12,
-    color: '#d97706',
-    fontWeight: '700',
-  },
-  // NUEVO: boton Entregar como solido (btnRegistrar de EstadiasScreen)
-  entregarButton: {
-    backgroundColor: '#6366f1',
+    color: '#f59e0b',
   },
   entregarText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '700',
+    color: '#10b981',
   },
-  // NUEVO: empty state con paleta y tipografia unificada
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -375,7 +340,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#1e293b',
     marginTop: 15,
   },
@@ -384,6 +349,5 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 5,
     textAlign: 'center',
-    paddingHorizontal: 30,
   },
 });
