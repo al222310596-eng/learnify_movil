@@ -8,7 +8,7 @@ import axios from 'axios';
 
 const IP = '192.168.75.207';  //ip de datos 172.20.10.2 172.20.10.4
 //const IP = '192.168.100.14'; // ip de internet casa 192.168.100.14
-export const BASE_URL = `http://19s2.168.75.207:5000/api`; // ✅ EXPORTADA
+export const BASE_URL = `http://192.168.75.207:5000/api`; // ✅ EXPORTADA
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -602,6 +602,8 @@ export const estadiasAPI = {
   },
 
 };
+
+
 // ============================================
 // USUARIOS / PERFIL
 // ============================================
@@ -654,5 +656,86 @@ export const usuariosAPI = {
       return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar foto' };
     }
   },
+  
 };
+// ============================================
+// MINUTAS
+// ============================================
+
+export const minutasAPI = {
+  getMinutas: async (usuarioId) => {
+    // ✅ Validación: no permitir usuarioId vacío o inválido
+    if (!usuarioId || usuarioId === "undefined" || usuarioId === "null") {
+      console.warn("⚠️ [minutasAPI.getMinutas] usuarioId inválido:", usuarioId);
+      return {
+        exito: false,
+        minutas: [],
+        mensaje: "usuarioId inválido"
+      };
+    }
+
+    try {
+      const url = `/minutas/${usuarioId}`;
+      console.log("🌐 [minutasAPI] GET", url);
+
+      const response = await api.get(url);
+      console.log("✅ [minutasAPI] Respuesta:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ [minutasAPI] Error en getMinutas:");
+      console.error("   URL:", error.config?.url);
+      console.error("   Método:", error.config?.method);
+      console.error("   Status:", error.response?.status);
+      console.error("   Data del servidor:", error.response?.data);
+      console.error("   Mensaje:", error.message);
+
+      return {
+        exito: false,
+        minutas: [],
+        mensaje: error.response?.data?.mensaje || "Error al obtener minutas"
+      };
+    }
+  },
+
+  getDetalleMinuta: async (minutaId) => {
+    try {
+      const response = await api.get(`/minutas/detalle/${minutaId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener detalle de minuta:', error);
+      return { exito: false };
+    }
+  },
+
+  crearMinuta: async (datos) => {
+    try {
+      const response = await api.post('/minutas/crear', datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error al crear minuta:', error);
+      return {
+        exito: false,
+        mensaje: error.response?.data?.mensaje || 'Error al crear minuta'
+      };
+    }
+  },
+
+  eliminarMinuta: async (minutaId) => {
+    if (String(minutaId).startsWith("local_")) {
+      return { exito: true, mensaje: "Eliminada localmente" };
+    }
+
+    try {
+      const response = await api.delete(`/minutas/eliminar/${minutaId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al eliminar minuta:', error);
+      return {
+        exito: false,
+        mensaje: error.response?.data?.mensaje || 'Error al eliminar'
+      };
+    }
+  },
+};
+
 export default api;
