@@ -287,15 +287,16 @@ export default function EstadiasScreen({ navigation }) {
             </TouchableOpacity>
           )}
 
-          {/* Registrar horas - Ambos roles (según retroalimentación) */}
-          <TouchableOpacity
-            style={[styles.btnAccion, styles.btnRegistrar]}
-            onPress={() => navigation.navigate('RegistrarHoras', { estadiaId: item._id })}
-          >
-            <Icon name="time-outline" size={15} color="#fff" />
-            <Text style={styles.btnRegistrarTexto}>Registrar</Text>
-          </TouchableOpacity>
-
+          {/* Registrar horas - SOLO ALUMNO */}
+          {esAlumno && (
+            <TouchableOpacity
+              style={[styles.btnAccion, styles.btnRegistrar]}
+              onPress={() => navigation.navigate('RegistrarHoras', { estadiaId: item._id })}
+            >
+              <Icon name="time-outline" size={15} color="#fff" />
+              <Text style={styles.btnRegistrarTexto}>Registrar</Text>
+            </TouchableOpacity>
+          )}
           {/* Eliminar - ambos */}
           <TouchableOpacity
             style={[styles.btnAccion, styles.btnEliminar]}

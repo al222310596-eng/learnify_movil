@@ -346,6 +346,44 @@ export const dualesAPI = {
     }
   },
 
+  // ✅ NUEVO: Solicitar código de firma por email
+  solicitarCodigoFirma: async (dualId, asignacionIndex, usuarioId) => {
+    try {
+      const response = await api.post('/duales/solicitar-codigo-firma', {
+        dual_id: dualId,
+        asignacion_index: asignacionIndex,
+        usuario_id: usuarioId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al solicitar código:', error);
+      return {
+        exito: false,
+        mensaje: error.response?.data?.mensaje || 'Error al enviar el código'
+      };
+    }
+  },
+
+  // ✅ NUEVO: Verificar código + contraseña y firmar
+  verificarCodigoFirma: async (dualId, asignacionIndex, usuarioId, codigo, password) => {
+    try {
+      const response = await api.post('/duales/verificar-codigo-firma', {
+        dual_id: dualId,
+        asignacion_index: asignacionIndex,
+        usuario_id: usuarioId,
+        codigo: codigo,
+        password: password
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al verificar código:', error);
+      return {
+        exito: false,
+        mensaje: error.response?.data?.mensaje || 'Error al verificar el código'
+      };
+    }
+  },
+
   buscarUsuario: async (email) => {
     try {
       const response = await api.get(`/usuarios/buscar?email=${encodeURIComponent(email)}`);

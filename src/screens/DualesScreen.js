@@ -300,15 +300,8 @@ Generado el: ${new Date().toLocaleString('es-MX')}
             <Text style={styles.actionTextVer}>Detalles</Text>
           </TouchableOpacity>
 
-          {tieneFirmaPendiente && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.actionFirma]}
-              onPress={() => abrirFirma(item._id, asignacionPendienteIndex)}
-            >
-              <Icon name="create-outline" size={15} color="#4338ca" />
-              <Text style={styles.actionTextVer}>Firmar</Text>
-            </TouchableOpacity>
-          )}
+          {/* ✅ ELIMINADO: Botón "Firmar" de la tarjeta principal
+      Ahora la firma se realiza desde el modal de detalles → sección "Materias y Firmas" */}
 
           {esMaestro && item.estado !== 'inactivo' && (
             <TouchableOpacity
@@ -367,7 +360,11 @@ Generado el: ${new Date().toLocaleString('es-MX')}
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.modalBody}
+              contentContainerStyle={styles.modalBodyContent}
+              showsVerticalScrollIndicator={false}
+            >
               <View style={styles.detalleField}>
                 <Text style={styles.detalleLabel}>Titulo</Text>
                 <Text style={styles.detalleValor}>{dual.titulo || 'Sin titulo'}</Text>
@@ -446,6 +443,9 @@ Generado el: ${new Date().toLocaleString('es-MX')}
                 </Text>
                 {dual.asignaciones && dual.asignaciones.length > 0 ? (
                   dual.asignaciones.map((a, index) => {
+                    // Solo maestros pueden firmar, y solo si aún no está firmado y él es el maestro asignado
+                    const puedeFirmar = esMaestro && !a.firmado && a.maestro_email === user?.email;
+
                     return (
                       <View key={index} style={styles.asignacionItem}>
                         <View style={styles.asignacionInfo}>
@@ -458,25 +458,46 @@ Generado el: ${new Date().toLocaleString('es-MX')}
                             </Text>
                           </View>
                         </View>
-                        <View style={[styles.firmaBadge, a.firmado ? styles.firmaFirmado : styles.firmaPendiente]}>
-                          {a.firmado ? (
-                            <>
-                              <Icon name="checkmark-circle" size={14} color="#059669" />
-                              <Text style={styles.firmaTextFirmado}>Firmado</Text>
-                            </>
-                          ) : (
-                            <>
-                              <Icon name="time-outline" size={14} color="#d97706" />
-                              <Text style={styles.firmaTextPendiente}>Pendiente</Text>
-                            </>
-                          )}
-                        </View>
-                      </View>
-                    );
-                  })
-                ) : (
-                  <Text style={styles.sinAsignaciones}>No hay materias asignadas.</Text>
-                )}
+
+                        {/* Contenedor de badges + botón firmar */}
+                        <View style={styles.firmaRightContainer}>
+                          <View style={[styles.firmaBadge, a.firmado ? styles.firmaFirmado : styles.firmaPendiente]}>
+                            {a.firmado ? (
+                              <>
+                                <Icon name="checkmark-circle" size={14} color="#059669" />
+                                <Text style={styles.firmaTextFirmado}>Firmado</Text>
+                              </>
+                            ) : (
+                              <>
+                                <Icon name="time-outline" size={14} color="#d97706" />
+                                <Text style={styles.firmaTextPendiente}>Pendiente</Text>
+                              </>
+                            )}
+          </View>
+
+          {/* ✅ NUEVO: Botón Firmar dentro del modal, junto a la asignación */}
+          {puedeFirmar && (
+            <TouchableOpacity
+              style={styles.btnFirmarInline}
+              onPress={() => {
+                cerrarDetalle(); // Cierra el modal
+                // Pequeño delay para que se cierre y luego navegue
+                setTimeout(() => {
+                  abrirFirma(dual._id, index);
+                }, 300);
+              }}
+            >
+              <Icon name="create-outline" size={14} color="#fff" />
+              <Text style={styles.btnFirmarInlineText}>Firmar</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  })
+) : (
+  <Text style={styles.sinAsignaciones}>No hay materias asignadas.</Text>
+)}
               </View>
 
               <View style={styles.modalActions}>
@@ -817,7 +838,11 @@ const styles = StyleSheet.create({
     color: '#1e293b',
   },
   modalBody: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  modalBodyContent: {
+    paddingBottom: 20,
   },
   detalleField: {
     marginBottom: 12,
@@ -922,29 +947,31 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   modalActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
   },
   modalActionButton: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 4,
   },
   modalCloseButton: {
     backgroundColor: '#e0e7ff',
+    borderWidth: 1.5,
+    borderColor: '#c7d2fe',
   },
   modalCloseText: {
     color: '#4338ca',
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: 14,
+    letterSpacing: 0.3,
   },
 
     // Filtros (iguales a EstadiasScreen)
@@ -984,4 +1011,27 @@ const styles = StyleSheet.create({
   chipActivo: { backgroundColor: '#667eea', borderColor: '#667eea' },
   chipText: { fontSize: 13, color: '#64748b', fontWeight: '500' },
   chipTextActivo: { color: '#fff', fontWeight: '600' },
+
+    // ✅ NUEVO: contenedor derecho con badge + botón firmar
+  firmaRightContainer: {
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+
+  // ✅ NUEVO: botón firmar inline (dentro del modal)
+  btnFirmarInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6366f1',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 10,
+    gap: 5,
+  },
+  btnFirmarInlineText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 12,
+  },
 });

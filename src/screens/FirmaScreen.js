@@ -1,8 +1,8 @@
 // ============================================
-// FirmaScreen.js - Pantalla para firmar duales
+// FirmaScreen.js - Firma por código de email
 // ============================================
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,115 +12,109 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
-  Dimensions
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
-import Signature from 'react-native-signature-canvas';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../contexts/AuthContext';
-import { BASE_URL } from '../api/api';
-
-const { width } = Dimensions.get('window');
+import { dualesAPI } from '../api/api';
 
 export default function FirmaScreen({ route, navigation }) {
   const { dualId, asignacionIndex } = route.params || {};
   const { user } = useAuth();
+
+  const [paso, setPaso] = useState(1); // 1 = solicitar, 2 = verificar
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const signatureRef = useRef(null);
+  const [codigo, setCodigo] = useState('');
+  const [password, setPassword] = useState('');
+  const [mensajeEnviado, setMensajeEnviado] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleOK = (signature) => {
-    console.log('✅ Firma capturada, tamaño:', signature?.length || 0);
-    if (signature && signature.length > 100) {
-      guardarFirma(signature);
-    } else {
-      Alert.alert('Error', 'La firma parece estar vacía o incompleta');
-    }
-  };
-
-  const handleEmpty = () => {
-    console.log('⚠️ Firma vacía');
-    Alert.alert('Error', 'Por favor, firma en el recuadro');
-  };
-
-  const guardarFirma = async (firmaBase64) => {
+  // ============================================
+  // PASO 1: Solicitar código
+  // ============================================
+  const solicitarCodigo = async () => {
     setIsLoading(true);
-    setError(null);
-    
-    try {
-      console.log('📤 Enviando firma...');
-      console.log('  - dualId:', dualId);
-      console.log('  - asignacionIndex:', asignacionIndex);
-      console.log('  - usuarioId:', user?._id);
-      
-      // ✅ Reducir la firma si es muy grande (comprimir)
-      let firmaEnviar = firmaBase64;
-      if (firmaEnviar && firmaEnviar.length > 500000) {
-        console.log('⚠️ Firma grande, comprimiendo...');
-        // Si es muy grande, solo enviar una versión reducida
-        // (la firma ya viene en base64, no podemos comprimirla más fácilmente)
-        // En su lugar, recortar si es necesario
-        firmaEnviar = firmaEnviar.substring(0, 400000);
-      }
-      
-      const url = `${BASE_URL}/duales/firmar`;
-      console.log('  - URL:', url);
-      
-      // Timeout de 60 segundos para firma
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          dual_id: dualId,
-          asignacion_index: asignacionIndex,
-          usuario_id: user?._id,
-          firma: firmaEnviar
-        }),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
+    setErrorMsg('');
 
-      console.log('📥 Respuesta:', response.status);
-      
-      const result = await response.json();
-      console.log('📦 Datos:', result);
+    try {
+      const result = await dualesAPI.solicitarCodigoFirma(
+        dualId,
+        asignacionIndex,
+        user?._id
+      );
 
       if (result.exito) {
-        Alert.alert(
-          '✅ Éxito',
-          'Firma registrada correctamente',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
+        setMensajeEnviado(result.mensaje || 'Código enviado a tu correo');
+        setPaso(2);
       } else {
-        throw new Error(result.mensaje || 'Error al registrar la firma');
+        setErrorMsg(result.mensaje || 'Error al enviar código');
       }
     } catch (error) {
-      console.error('❌ Error:', error);
-      
-      let mensaje = 'Error de conexión. Verifica que el servidor esté corriendo.';
-      if (error.name === 'AbortError') {
-        mensaje = 'El servidor tardó demasiado en responder. Intenta de nuevo.';
-      } else if (error.message) {
-        mensaje = error.message;
-      }
-      
-      Alert.alert('Error', mensaje);
+      console.error('Error:', error);
+      setErrorMsg('Error de conexión');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const limpiarFirma = () => {
-    if (signatureRef.current) {
-      signatureRef.current.clearSignature();
+  // ============================================
+  // PASO 2: Verificar código + contraseña
+  // ============================================
+  const verificarYFirmar = async () => {
+    setErrorMsg('');
+
+    if (!codigo || codigo.length !== 6) {
+      setErrorMsg('El código debe tener 6 dígitos');
+      return;
+    }
+    if (!password) {
+      setErrorMsg('Ingresa tu contraseña');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const result = await dualesAPI.verificarCodigoFirma(
+        dualId,
+        asignacionIndex,
+        user?._id,
+        codigo,
+        password
+      );
+
+      if (result.exito) {
+        Alert.alert(
+          '✅ Firma registrada',
+          'El dual ha sido firmado correctamente.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+      } else {
+        setErrorMsg(result.mensaje || 'Error al verificar el código');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setErrorMsg('Error de conexión');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  // ============================================
+  // VOLVER AL PASO 1
+  // ============================================
+  const volverPaso1 = () => {
+    setPaso(1);
+    setCodigo('');
+    setPassword('');
+    setErrorMsg('');
+    setMensajeEnviado('');
+  };
+
+  // Validación inicial
   if (!dualId || asignacionIndex === undefined) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -144,87 +138,180 @@ export default function FirmaScreen({ route, navigation }) {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-back-outline" size={24} color="#1e293b" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          <Icon name="create-outline" size={20} color="#8b5cf6" /> Firmar Dual
-        </Text>
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        {/* HEADER */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Icon name="arrow-back-outline" size={24} color="#1e293b" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            <Icon name="shield-checkmark-outline" size={20} color="#8b5cf6" /> Firmar Dual
+          </Text>
+        </View>
 
-      <View style={styles.instructionsContainer}>
-        <Text style={styles.instructions}>
-          <Icon name="information-circle-outline" size={16} color="#8b5cf6" /> Firma en el recuadro para confirmar
-        </Text>
-        {user && (
-          <Text style={styles.userInfo}>👤 Firmando como: {user.nombre}</Text>
-        )}
-        {error && (
-          <Text style={styles.errorInfo}>⚠️ {error}</Text>
-        )}
-      </View>
-
-      <View style={styles.signatureContainer}>
-        <Signature
-          ref={signatureRef}
-          onOK={handleOK}
-          onEmpty={handleEmpty}
-          descriptionText="Firma aquí"
-          clearText="Limpiar"
-          confirmText="Aceptar"
-          webStyle={`
-            .m-signature-pad {
-              box-shadow: none;
-              border: 2px solid #e2e8f0;
-              border-radius: 12px;
-              height: 220px;
-            }
-            .m-signature-pad--body {
-              border: none;
-            }
-            .m-signature-pad--body canvas {
-              border-radius: 10px;
-            }
-            .m-signature-pad--footer {
-              display: none;
-            }
-          `}
-          autoClear={false}
-          imageType="image/png"
-          // ✅ Reducir la calidad de la firma
-          imageQuality={0.5}
-        />
-      </View>
-
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity
-          style={[styles.button, styles.clearButton]}
-          onPress={limpiarFirma}
-          disabled={isLoading}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.clearButtonText}>Limpiar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, styles.saveButton, isLoading && styles.buttonDisabled]}
-          onPress={() => {
-            if (signatureRef.current) {
-              signatureRef.current.readSignature();
-            }
-          }}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.saveButtonText}>Firmar</Text>
+          {/* AVISO INICIAL */}
+          <View style={styles.avisoInicial}>
+            <Icon name="information-circle-outline" size={18} color="#4338ca" />
+            <Text style={styles.avisoTexto}>
+              Por seguridad, enviaremos un <Text style={{ fontWeight: '700' }}>código de 6 dígitos</Text> a tu
+              correo electrónico. Deberás ingresarlo junto con tu contraseña para firmar.
+            </Text>
+          </View>
+
+          {user && (
+            <Text style={styles.userInfo}>
+              👤 Firmando como: <Text style={{ fontWeight: '700' }}>{user.nombre}</Text>
+            </Text>
           )}
-        </TouchableOpacity>
-      </View>
+
+          {/* ============================================ */}
+          {/* PASO 1: SOLICITAR CÓDIGO                    */}
+          {/* ============================================ */}
+          {paso === 1 && (
+            <View style={styles.card}>
+              <View style={styles.pasoIndicator}>
+                <View style={styles.pasoCirculoActivo}>
+                  <Text style={styles.pasoTextoActivo}>1</Text>
+                </View>
+                <View style={styles.pasoLinea} />
+                <View style={styles.pasoCirculoInactivo}>
+                  <Text style={styles.pasoTextoInactivo}>2</Text>
+                </View>
+              </View>
+
+              <Text style={styles.pasoTitle}>Solicitar código de firma</Text>
+              <Text style={styles.pasoDescripcion}>
+                Recibirás el código en el correo asociado a tu cuenta:
+              </Text>
+              <Text style={styles.correoTexto}>{user?.email || 'tu correo'}</Text>
+
+              {errorMsg ? (
+                <View style={styles.errorBox}>
+                  <Icon name="alert-circle-outline" size={16} color="#991b1b" />
+                  <Text style={styles.errorBoxText}>{errorMsg}</Text>
+                </View>
+              ) : null}
+
+              <TouchableOpacity
+                style={[styles.botonPrincipal, isLoading && styles.botonDisabled]}
+                onPress={solicitarCodigo}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <Icon name="paper-plane-outline" size={18} color="#fff" />
+                    <Text style={styles.botonPrincipalTexto}>Enviar código a mi correo</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ============================================ */}
+          {/* PASO 2: INGRESAR CÓDIGO Y CONTRASEÑA        */}
+          {/* ============================================ */}
+          {paso === 2 && (
+            <View style={styles.card}>
+              <View style={styles.pasoIndicator}>
+                <View style={styles.pasoCirculoCompletado}>
+                  <Icon name="checkmark" size={16} color="#fff" />
+                </View>
+                <View style={styles.pasoLineaActiva} />
+                <View style={styles.pasoCirculoActivo}>
+                  <Text style={styles.pasoTextoActivo}>2</Text>
+                </View>
+              </View>
+
+              {/* Mensaje de éxito */}
+              <View style={styles.exitoBox}>
+                <Icon name="checkmark-circle" size={18} color="#166534" />
+                <Text style={styles.exitoBoxText}>{mensajeEnviado}</Text>
+              </View>
+
+              {/* Input código */}
+              <Text style={styles.inputLabel}>
+                <Icon name="key-outline" size={14} color="#475569" /> Código de 6 dígitos
+              </Text>
+              <TextInput
+                style={styles.inputCodigo}
+                value={codigo}
+                onChangeText={(t) => setCodigo(t.replace(/[^0-9]/g, '').slice(0, 6))}
+                placeholder="000000"
+                placeholderTextColor="#cbd5e1"
+                keyboardType="number-pad"
+                maxLength={6}
+                autoFocus
+              />
+
+              {/* Input contraseña */}
+              <Text style={styles.inputLabel}>
+                <Icon name="lock-closed-outline" size={14} color="#475569" /> Tu contraseña
+              </Text>
+              <TextInput
+                style={styles.inputPassword}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Ingresa tu contraseña"
+                placeholderTextColor="#94a3b8"
+                secureTextEntry
+                autoCapitalize="none"
+              />
+
+              {errorMsg ? (
+                <View style={styles.errorBox}>
+                  <Icon name="alert-circle-outline" size={16} color="#991b1b" />
+                  <Text style={styles.errorBoxText}>{errorMsg}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.botonesRow}>
+                <TouchableOpacity
+                  style={[styles.botonFirmar, isLoading && styles.botonDisabled]}
+                  onPress={verificarYFirmar}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <>
+                      <Icon name="checkmark-circle-outline" size={18} color="#fff" />
+                      <Text style={styles.botonFirmarTexto}>Firmar ahora</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.botonCancelar}
+                  onPress={volverPaso1}
+                  disabled={isLoading}
+                >
+                  <Text style={styles.botonCancelarTexto}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.notaExpiracion}>
+                <Icon name="time-outline" size={12} color="#94a3b8" /> El código expira en 10 minutos
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+// ============================================
+// ESTILOS
+// ============================================
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -247,73 +334,250 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1e293b',
   },
-  instructionsContainer: {
+  scrollContent: {
     padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    paddingBottom: 40,
   },
-  instructions: {
-    fontSize: 14,
-    color: '#64748b',
+  avisoInicial: {
+    flexDirection: 'row',
+    backgroundColor: '#eef2ff',
+    borderLeftWidth: 4,
+    borderLeftColor: '#6366f1',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    gap: 8,
+  },
+  avisoTexto: {
+    flex: 1,
+    fontSize: 13,
+    color: '#4338ca',
+    lineHeight: 18,
   },
   userInfo: {
     fontSize: 13,
     color: '#8b5cf6',
-    marginTop: 4,
+    marginBottom: 16,
+    paddingHorizontal: 4,
   },
-  errorInfo: {
-    fontSize: 13,
-    color: '#ef4444',
-    marginTop: 4,
-  },
-  signatureContainer: {
-    flex: 1,
-    padding: 16,
+  card: {
     backgroundColor: '#fff',
-    margin: 16,
-    borderRadius: 12,
+    borderRadius: 16,
+    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 2,
   },
-  buttonsContainer: {
+
+  // Indicador de pasos
+  pasoIndicator: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    padding: 16,
-    gap: 10,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-  },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    minWidth: 100,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
-  clearButton: {
+  pasoCirculoActivo: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#6366f1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pasoCirculoInactivo: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  clearButtonText: {
-    color: '#64748b',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  saveButton: {
+  pasoCirculoCompletado: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#10b981',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  saveButtonText: {
+  pasoTextoActivo: {
     color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  pasoTextoInactivo: {
+    color: '#94a3b8',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  pasoLinea: {
+    width: 40,
+    height: 2,
+    backgroundColor: '#e2e8f0',
+    marginHorizontal: 6,
+  },
+  pasoLineaActiva: {
+    width: 40,
+    height: 2,
+    backgroundColor: '#10b981',
+    marginHorizontal: 6,
+  },
+
+  // Textos de paso
+  pasoTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 8,
+  },
+  pasoDescripcion: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 6,
+  },
+  correoTexto: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#6366f1',
+    marginBottom: 20,
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 8,
+    textAlign: 'center',
+  },
+
+  // Botón principal (paso 1)
+  botonPrincipal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6366f1',
+    paddingVertical: 14,
+    borderRadius: 10,
+    gap: 8,
+  },
+  botonPrincipalTexto: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+
+  // Inputs (paso 2)
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+    marginBottom: 8,
+  },
+  inputCodigo: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    fontSize: 28,
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: 10,
+    color: '#1e293b',
+    marginBottom: 18,
+  },
+  inputPassword: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: '#1e293b',
+    marginBottom: 18,
+  },
+
+  // Cajas de mensaje
+  exitoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#dcfce7',
+    borderLeftWidth: 4,
+    borderLeftColor: '#10b981',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 18,
+    gap: 8,
+  },
+  exitoBoxText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#166534',
+    fontWeight: '600',
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fee2e2',
+    borderLeftWidth: 4,
+    borderLeftColor: '#ef4444',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    gap: 8,
+  },
+  errorBoxText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#991b1b',
+    fontWeight: '600',
+  },
+
+  // Botones paso 2
+  botonesRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  botonFirmar: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10b981',
+    paddingVertical: 14,
+    borderRadius: 10,
+    gap: 8,
+  },
+  botonFirmarTexto: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  botonCancelar: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f1f5f9',
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  botonCancelarTexto: {
+    color: '#475569',
     fontWeight: '600',
     fontSize: 14,
   },
-  buttonDisabled: {
+  botonDisabled: {
     opacity: 0.6,
   },
+
+  notaExpiracion: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 16,
+  },
+
+  // Error general
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
