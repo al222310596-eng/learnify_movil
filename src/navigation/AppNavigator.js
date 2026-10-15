@@ -42,6 +42,11 @@ import DetalleEstadiaScreen from '../screens/DetalleEstadiaScreen';
 // Importar la pantalla de videollamada
 import VideollamadaScreen from '../screens/VideollamadaScreen';
 
+//  NUEVO: Pantallas de Minutas
+import MisMinutasScreen from '../screens/MisMinutasScreen';
+import CrearMinutaScreen from '../screens/CrearMinutaScreen';
+import DetalleMinutaScreen from '../screens/DetalleMinutaScreen';
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -133,6 +138,11 @@ function MainStack() {
       <Stack.Screen name="DetalleTarea" component={DetalleTareaScreen} />
       <Stack.Screen name="Videollamada" component={VideollamadaScreen} />
       <Stack.Screen name="Firma" component={FirmaScreen} />
+
+      {/* 👇 NUEVO: pantallas de minutas */}
+      <Stack.Screen name="MisMinutas" component={MisMinutasScreen} />
+      <Stack.Screen name="CrearMinuta" component={CrearMinutaScreen} />
+      <Stack.Screen name="DetalleMinuta" component={DetalleMinutaScreen} />
     </Stack.Navigator>
   );
 }

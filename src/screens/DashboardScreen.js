@@ -16,13 +16,15 @@ import {
   StatusBar
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { equiposAPI, tareasAPI } from '../api/api';
+import { equiposAPI, tareasAPI, minutasAPI } from '../api/api';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function DashboardScreen({ navigation }) {
   const { user, isLoading, logout } = useAuth();
   const [equipos, setEquipos] = useState([]);
   const [tareas, setTareas] = useState([]);
+  const [minutas, setMinutas] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -45,7 +47,7 @@ export default function DashboardScreen({ navigation }) {
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      
+
       const equiposResult = await equiposAPI.getEquipos(user._id);
       if (equiposResult.exito) {
         setEquipos(equiposResult.equipos || []);
@@ -61,6 +63,12 @@ export default function DashboardScreen({ navigation }) {
         if (tareasResult.exito) {
           setTareas(tareasResult.tareas || []);
         }
+      }
+
+      // Cargar minutas
+      const minutasResult = await minutasAPI.getMinutas(user._id);
+      if (minutasResult.exito) {
+        setMinutas(minutasResult.minutas || []);
       }
     } catch (error) {
       console.error('Error al cargar datos:', error);
@@ -146,6 +154,10 @@ export default function DashboardScreen({ navigation }) {
             </Text>
             <Text style={styles.statLabel}>Entregas</Text>
           </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{minutas.length}</Text>
+            <Text style={styles.statLabel}>Minutas</Text>
+          </View>
         </View>
 
         {/* Botón de videollamada */}
@@ -156,6 +168,65 @@ export default function DashboardScreen({ navigation }) {
           <Icon name="videocam" size={22} color="#fff" />
           <Text style={styles.videoCallButtonText}>Videollamada</Text>
         </TouchableOpacity>
+
+        {/* Sección de Minutas */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Mis Minutas</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('MisMinutas')}>
+              <Text style={styles.seeAll}>Ver todas</Text>
+            </TouchableOpacity>
+          </View>
+
+          {minutas.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>No tienes minutas aún</Text>
+              <TouchableOpacity
+                style={styles.btnCrearMinuta}
+                onPress={() => navigation.navigate('CrearMinuta')}
+              >
+                <Icon name="add-circle-outline" size={18} color="#fff" />
+                <Text style={styles.btnCrearMinutaText}>Crear minuta</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            minutas.slice(0, 3).map((minuta, index) => (
+              <TouchableOpacity
+                key={minuta._id || index}
+                style={styles.minutaCard}
+                onPress={() =>
+                  navigation.navigate('DetalleMinuta', { minuta })
+                }
+              >
+                <View style={styles.minutaCardInfo}>
+                  <Text style={styles.minutaAsunto} numberOfLines={1}>
+                    {minuta.asunto}
+                  </Text>
+
+                  <View style={styles.fila}>
+                    <Icon name="calendar-outline" size={14} color="#667eea" />
+                    <Text style={styles.minutaFecha}>
+                      {minuta.fecha
+                        ? new Date(minuta.fecha + 'T12:00:00').toLocaleDateString('es-MX')
+                        : ''}
+                      {minuta.hora ? ` · ${minuta.hora}` : ''}
+                    </Text>
+                  </View>
+
+                  <View style={styles.fila}>
+                    <Icon name="people-outline" size={14} color="#667eea" />
+                    <Text style={styles.minutaInfo}>
+                      {minuta.total_asistentes ?? minuta.asistentes?.length ?? 0} asistentes ·{' '}
+                      {minuta.total_acuerdos ?? minuta.acuerdos?.length ?? 0} acuerdos
+                    </Text>
+                  </View>
+                </View>
+
+                <Icon name="chevron-forward-outline" size={20} color="#94a3b8" />
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
 
         {/* Equipos */}
         <View style={styles.section}>
@@ -171,8 +242,8 @@ export default function DashboardScreen({ navigation }) {
             </View>
           ) : (
             equipos.slice(0, 3).map((equipo, index) => (
-              <TouchableOpacity 
-                key={index} 
+              <TouchableOpacity
+                key={index}
                 style={styles.equipoCard}
                 onPress={() => navigation.navigate('Equipos')}
               >
@@ -232,7 +303,6 @@ export default function DashboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  // NUEVO: fondo unificado
   safeArea: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -252,7 +322,6 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 16,
   },
-  // NUEVO: header unificado con el de EstadiasScreen
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -267,7 +336,6 @@ const styles = StyleSheet.create({
   headerInfo: {
     flex: 1,
   },
-  // NUEVO: tipografía del header igual a EstadiasScreen
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -281,17 +349,16 @@ const styles = StyleSheet.create({
   logoutButton: {
     padding: 8,
   },
-  // NUEVO: tarjetas de estadística homogéneas con las de EstadiasScreen
   statsContainer: {
     flexDirection: 'row',
     padding: 15,
-    gap: 10,
+    gap: 8,
   },
   statCard: {
     flex: 1,
     backgroundColor: '#fff',
     borderRadius: 14,
-    padding: 15,
+    paddingVertical: 12,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -300,16 +367,15 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   statNumber: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#667eea',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#94a3b8',
     marginTop: 4,
   },
-  // NUEVO: botón videollamada con paleta unificada (primario)
   videoCallButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -352,7 +418,6 @@ const styles = StyleSheet.create({
     color: '#667eea',
     fontWeight: '600',
   },
-  // NUEVO: tarjeta de equipo con estilo homogéneo (borderRadius 14, padding 16)
   equipoCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -380,7 +445,6 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     marginTop: 2,
   },
-  // NUEVO: tarjeta de tarea con estilo homogéneo
   tareaCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -398,7 +462,6 @@ const styles = StyleSheet.create({
     color: '#1e293b',
     marginBottom: 6,
   },
-  // NUEVO: filas con icono iguales a EstadiasScreen
   fila: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -429,5 +492,58 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#94a3b8',
     fontSize: 14,
+  },
+
+  // Estilos exclusivos de minutas
+  minutaCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#667eea',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  minutaCardInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  minutaAsunto: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 6,
+  },
+  minutaFecha: {
+    fontSize: 12,
+    color: '#64748b',
+    flex: 1,
+  },
+  minutaInfo: {
+    fontSize: 12,
+    color: '#64748b',
+    flex: 1,
+  },
+  btnCrearMinuta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#667eea',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginTop: 14,
+  },
+  btnCrearMinutaText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 13,
   },
 });
