@@ -5,9 +5,10 @@
 import axios from 'axios';
 
 // IP DE TU COMPUTADORA
-const IP = '172.20.10.4';  //ip de datos 172.20.10.2 
+
+const IP = '192.168.75.207';  //ip de datos 172.20.10.2 172.20.10.4
 //const IP = '192.168.100.14'; // ip de internet casa 192.168.100.14
-export const BASE_URL = `http://${IP}:5000/api`; // ✅ EXPORTADA
+export const BASE_URL = `http://192.168.75.207:5000/api`; // ✅ EXPORTADA
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -22,7 +23,7 @@ const api = axios.create({
 // ============================================
 
 export const authAPI = {
-  registrar: async (nombre, email, password, rol) => {
+  registrar: async (nombre, email, password, rol) => {cd 
     try {
       const response = await api.post('/registro', { nombre, email, password, rol });
       return response.data;
@@ -396,6 +397,307 @@ export const jitsiAPI = {
       return { exito: false, salas: [] };
     }
   }
+};
+
+// ============================================
+// ESTADÍAS (extendido)
+// ============================================
+
+export const estadiasAPI = {
+  // Listar estadías (ya lo tenías)
+  getEstadias: async (usuarioId) => {
+    try {
+      const response = await api.get(`/estadias/${usuarioId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener estadías:', error);
+      return { exito: false, estadias: [] };
+    }
+  },
+
+  // Detalle de una estadía
+  getDetalleEstadia: async (estadiaId) => {
+    try {
+      const response = await api.get(`/estadias/detalle/${estadiaId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener detalle:', error);
+      return { exito: false };
+    }
+  },
+
+  // Crear estadía
+  crearEstadia: async (datos) => {
+    try {
+      const response = await api.post('/estadias/crear', datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error al crear estadía:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al crear' };
+    }
+  },
+
+  // Actualizar estadía
+  actualizarEstadia: async (estadiaId, datos) => {
+    try {
+      const response = await api.put(`/estadias/actualizar/${estadiaId}`, datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error al actualizar estadía:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al actualizar' };
+    }
+  },
+
+  // Eliminar estadía
+  eliminarEstadia: async (estadiaId) => {
+    try {
+      const response = await api.delete(`/estadias/eliminar/${estadiaId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al eliminar estadía:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar' };
+    }
+  },
+
+  // ✅ NUEVO: buscar maestros (autocompletado)
+  buscarMaestros: async (q, limite = 8) => {
+    try {
+      const response = await api.get('/usuarios/maestros', {
+        params: { q, limite }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al buscar maestros:', error);
+      return { exito: false, maestros: [] };
+    }
+  },
+
+  // ✅ NUEVO: progreso de horas
+  getProgreso: async (estadiaId) => {
+    try {
+      const response = await api.get(`/estadias/${estadiaId}/progreso`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener progreso:', error);
+      return { exito: false };
+    }
+  },
+
+  // ✅ NUEVO: listar registros de horas
+  getRegistros: async (estadiaId) => {
+    try {
+      const response = await api.get(`/estadias/${estadiaId}/registros`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener registros:', error);
+      return { exito: false, registros: [] };
+    }
+  },
+
+  // ✅ NUEVO: crear registro de horas
+  crearRegistro: async (estadiaId, datos) => {
+    try {
+      const response = await api.post(`/estadias/${estadiaId}/registros`, datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error al crear registro:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al guardar' };
+    }
+  },
+
+  // ✅ NUEVO: actualizar registro
+  actualizarRegistro: async (registroId, datos) => {
+    try {
+      const response = await api.put(`/registros/${registroId}`, datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error al actualizar registro:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al actualizar' };
+    }
+  },
+
+  // ✅ NUEVO: eliminar registro
+  eliminarRegistro: async (registroId) => {
+    try {
+      const response = await api.delete(`/registros/${registroId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al eliminar registro:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar' };
+    }
+    
+  },
+
+    // ✅ NUEVO: obtener HTML del formato para imprimir
+  getFormatoHTML: async (estadiaId) => {
+    try {
+      const response = await api.get(`/estadias/formato/${estadiaId}`, {
+        responseType: 'text'  // ← HTML plano, no JSON
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener formato:', error);
+      return null;
+    }
+  },
+
+    // ✅ NUEVO: estadías nuevas para el maestro (notificación)
+  getEstadiasNuevas: async (usuarioId) => {
+    try {
+      const response = await api.get(`/estadias/nuevas/${usuarioId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener estadías nuevas:', error);
+      return { exito: false, total_nuevas: 0, estadias: [] };
+    }
+  },
+
+  // ✅ NUEVO: marcar estadías como vistas
+  marcarEstadiasVistas: async (usuarioId) => {
+    try {
+      const response = await api.post('/estadias/marcar-vistas', { usuario_id: usuarioId });
+      return response.data;
+    } catch (error) {
+      console.error('Error al marcar vistas:', error);
+      return { exito: false };
+    }
+  },
+
+};
+
+
+// ============================================
+// USUARIOS / PERFIL
+// ============================================
+
+export const usuariosAPI = {
+  // Actualizar datos del perfil (nombre, email, password)
+  actualizar: async (usuarioId, datos) => {
+    try {
+      const response = await api.put('/usuarios/actualizar', {
+        usuario_id: usuarioId,
+        ...datos,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al actualizar perfil:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al actualizar' };
+    }
+  },
+
+  // Subir foto de perfil
+  subirFoto: async (usuarioId, imagen) => {
+    try {
+      const formData = new FormData();
+      formData.append('usuario_id', usuarioId);
+      formData.append('foto', {
+        uri: imagen.uri,
+        name: imagen.fileName || 'perfil.jpg',
+        type: imagen.mimeType || 'image/jpeg',
+      });
+
+      const response = await api.post('/usuarios/subir-foto', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al subir foto:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al subir foto' };
+    }
+  },
+
+  // Eliminar foto de perfil
+  eliminarFoto: async (usuarioId) => {
+    try {
+      const response = await api.delete('/usuarios/eliminar-foto', {
+        data: { usuario_id: usuarioId },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al eliminar foto:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al eliminar foto' };
+    }
+  },
+  
+};
+// ============================================
+// MINUTAS
+// ============================================
+
+export const minutasAPI = {
+  getMinutas: async (usuarioId) => {
+    // ✅ Validación: no permitir usuarioId vacío o inválido
+    if (!usuarioId || usuarioId === "undefined" || usuarioId === "null") {
+      console.warn("⚠️ [minutasAPI.getMinutas] usuarioId inválido:", usuarioId);
+      return {
+        exito: false,
+        minutas: [],
+        mensaje: "usuarioId inválido"
+      };
+    }
+
+    try {
+      const url = `/minutas/${usuarioId}`;
+      console.log("🌐 [minutasAPI] GET", url);
+
+      const response = await api.get(url);
+      console.log("✅ [minutasAPI] Respuesta:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ [minutasAPI] Error en getMinutas:");
+      console.error("   URL:", error.config?.url);
+      console.error("   Método:", error.config?.method);
+      console.error("   Status:", error.response?.status);
+      console.error("   Data del servidor:", error.response?.data);
+      console.error("   Mensaje:", error.message);
+
+      return {
+        exito: false,
+        minutas: [],
+        mensaje: error.response?.data?.mensaje || "Error al obtener minutas"
+      };
+    }
+  },
+
+  getDetalleMinuta: async (minutaId) => {
+    try {
+      const response = await api.get(`/minutas/detalle/${minutaId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener detalle de minuta:', error);
+      return { exito: false };
+    }
+  },
+
+  crearMinuta: async (datos) => {
+    try {
+      const response = await api.post('/minutas/crear', datos);
+      return response.data;
+    } catch (error) {
+      console.error('Error al crear minuta:', error);
+      return {
+        exito: false,
+        mensaje: error.response?.data?.mensaje || 'Error al crear minuta'
+      };
+    }
+  },
+
+  eliminarMinuta: async (minutaId) => {
+    if (String(minutaId).startsWith("local_")) {
+      return { exito: true, mensaje: "Eliminada localmente" };
+    }
+
+    try {
+      const response = await api.delete(`/minutas/eliminar/${minutaId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al eliminar minuta:', error);
+      return {
+        exito: false,
+        mensaje: error.response?.data?.mensaje || 'Error al eliminar'
+      };
+    }
+  },
 };
 
 export default api;

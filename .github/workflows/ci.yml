@@ -1,0 +1,91 @@
+name: CI Pipeline - Learnify Mobile
+
+on:
+  push:
+    branches: [ develop, main, 'feature/*' ]
+  pull_request:
+    branches: [ develop, main ]
+  workflow_dispatch:
+
+jobs:
+  # ============================================
+  # JOB 1: BUILD
+  # ============================================
+  build:
+    name: Build - Preparar proyecto
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm install --legacy-peer-deps
+
+      - name: Build exitoso
+        run: echo "✅ Build completado correctamente"
+
+  # ============================================
+  # JOB 2: PRUEBAS
+  # ============================================
+  test:
+    name: Test - Ejecutar pruebas
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm install --legacy-peer-deps
+
+      - name: Ejecutar pruebas con cobertura
+        run: npm test -- --coverage --watchAll=false
+
+      - name: Subir reporte de cobertura
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          if-no-files-found: ignore
+
+  # ============================================
+  # JOB 3: RESULTADOS
+  # ============================================
+  results:
+    name: Results - Reportar resultado
+    runs-on: ubuntu-latest
+    needs: [build, test]
+    if: always()
+
+    steps:
+      - name: Resumen del pipeline
+        run: |
+          echo "=========================================="
+          echo "  RESUMEN DEL PIPELINE - LEARNIFY MOBILE"
+          echo "=========================================="
+          echo "Build:  ${{ needs.build.result }}"
+          echo "Tests:  ${{ needs.test.result }}"
+          echo "=========================================="
+
+          if [ "${{ needs.test.result }}" == "success" ]; then
+            echo "✅ Pipeline EXITOSO"
+            exit 0
+          else
+            echo "❌ Pipeline FALLIDO"
+            exit 1
+          fi

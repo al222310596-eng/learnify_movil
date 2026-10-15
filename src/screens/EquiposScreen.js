@@ -1,5 +1,5 @@
 // ============================================
-// EquiposScreen.js - CON VISUALIZACIÓN DEL ID
+// EquiposScreen.js - CON VISUALIZACION DEL ID
 // ============================================
 
 import React, { useState, useEffect } from 'react';
@@ -91,18 +91,16 @@ export default function EquiposScreen({ navigation }) {
       );
 
       if (result.exito) {
-        // Guardar el equipo creado
         setEquipoCreado({
           id: result.equipo_id,
           nombre: nombreEquipo
         });
-        
+
         setModalVisible(false);
         setNombreEquipo('');
         setDescripcionEquipo('');
         cargarEquipos();
-        
-        // Mostrar modal con el ID
+
         setModalExitoVisible(true);
       } else {
         Alert.alert('Error', result.mensaje || 'Error al crear equipo');
@@ -238,22 +236,24 @@ export default function EquiposScreen({ navigation }) {
             <Text style={styles.equipoNombre}>{item.nombre}</Text>
             {esLider && (
               <View style={styles.liderBadge}>
-                <Text style={styles.liderBadgeText}>👑 Líder</Text>
+                <Text style={styles.liderBadgeText}>Líder</Text>
               </View>
             )}
           </View>
-          
+
           <Text style={styles.equipoDescripcion}>
             {item.descripcion || 'Sin descripción'}
           </Text>
-          
+
           <View style={styles.equipoMeta}>
-            <Text style={styles.equipoMetaText}>
-              <Icon name="people-outline" size={14} color="#94a3b8" /> 
-              {item.total_miembros || 0} miembros
-            </Text>
+            <View style={styles.metaFila}>
+              <Icon name="people-outline" size={14} color="#667eea" />
+              <Text style={styles.equipoMetaText}>
+                {item.total_miembros || 0} miembros
+              </Text>
+            </View>
             {esLider && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.mostrarIdButton}
                 onPress={() => {
                   setEquipoCreado({
@@ -263,67 +263,67 @@ export default function EquiposScreen({ navigation }) {
                   setModalExitoVisible(true);
                 }}
               >
-                <Icon name="key-outline" size={14} color="#667eea" />
+                <Icon name="key-outline" size={14} color="#4338ca" />
                 <Text style={styles.mostrarIdText}>Mostrar ID</Text>
               </TouchableOpacity>
             )}
           </View>
 
           <View style={styles.equipoAcciones}>
-            <TouchableOpacity 
-              style={styles.accionBoton}
+            <TouchableOpacity
+              style={[styles.accionBoton, styles.accionPrimario]}
               onPress={() => abrirChat(item._id, item.nombre)}
             >
-              <Icon name="chatbubble-outline" size={18} color="#667eea" />
-              <Text style={styles.accionText}>Chat</Text>
+              <Icon name="chatbubble-outline" size={15} color="#4338ca" />
+              <Text style={styles.accionTextPrimario}>Chat</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.accionBoton}
+            <TouchableOpacity
+              style={[styles.accionBoton, styles.accionPrimario]}
               onPress={() => verTareasEquipo(item._id)}
             >
-              <Icon name="list-outline" size={18} color="#667eea" />
-              <Text style={styles.accionText}>Tareas</Text>
+              <Icon name="list-outline" size={15} color="#4338ca" />
+              <Text style={styles.accionTextPrimario}>Tareas</Text>
             </TouchableOpacity>
 
             {esLider && (
               <>
-                <TouchableOpacity 
-                  style={styles.accionBoton}
-                  onPress={() => navigation.navigate('CrearTarea', { 
-                    equipoId: item._id, 
-                    equipoNombre: item.nombre 
+                <TouchableOpacity
+                  style={[styles.accionBoton, styles.accionPrimario]}
+                  onPress={() => navigation.navigate('CrearTarea', {
+                    equipoId: item._id,
+                    equipoNombre: item.nombre
                   })}
                 >
-                  <Icon name="add-circle-outline" size={18} color="#667eea" />
-                  <Text style={styles.accionText}>Crear Tarea</Text>
+                  <Icon name="add-circle-outline" size={15} color="#4338ca" />
+                  <Text style={styles.accionTextPrimario}>Crear Tarea</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
-                  style={styles.accionBoton}
+                <TouchableOpacity
+                  style={[styles.accionBoton, styles.accionPrimario]}
                   onPress={() => verAnalisis(item._id)}
                 >
-                  <Icon name="analytics-outline" size={18} color="#667eea" />
-                  <Text style={styles.accionText}>Análisis</Text>
+                  <Icon name="analytics-outline" size={15} color="#4338ca" />
+                  <Text style={styles.accionTextPrimario}>Análisis</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.accionBoton, styles.accionEliminar]}
                   onPress={() => confirmarEliminarEquipo(item._id, item.nombre)}
                 >
-                  <Icon name="trash-outline" size={18} color="#ef4444" />
-                  <Text style={[styles.accionText, styles.accionEliminarText]}>Eliminar</Text>
+                  <Icon name="trash-outline" size={15} color="#dc2626" />
+                  <Text style={styles.accionTextEliminar}>Eliminar</Text>
                 </TouchableOpacity>
               </>
             )}
 
             {esMiembro && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.accionBoton, styles.accionSalir]}
                 onPress={() => confirmarSalirEquipo(item._id, item.nombre)}
               >
-                <Icon name="exit-outline" size={18} color="#f59e0b" />
-                <Text style={[styles.accionText, styles.accionSalirText]}>Salir</Text>
+                <Icon name="exit-outline" size={15} color="#d97706" />
+                <Text style={styles.accionTextSalir}>Salir</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -348,11 +348,15 @@ export default function EquiposScreen({ navigation }) {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
       <View style={styles.container}>
-        {/* Header */}
+
+        {/* NUEVO: header unificado con EstadiasScreen */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            <Icon name="people-outline" size={22} color="#667eea" /> Mis Equipos
-          </Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>
+              <Icon name="people-outline" size={22} color="#667eea" />{' '}
+              Mis Equipos
+            </Text>
+          </View>
           <View style={styles.headerButtons}>
             <TouchableOpacity
               style={styles.joinButton}
@@ -364,7 +368,7 @@ export default function EquiposScreen({ navigation }) {
               style={styles.createButton}
               onPress={() => setModalVisible(true)}
             >
-              <Icon name="add-outline" size={24} color="#fff" />
+              <Icon name="add-outline" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -375,11 +379,11 @@ export default function EquiposScreen({ navigation }) {
           renderItem={renderEquipo}
           keyExtractor={(item) => item._id}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#667eea']} />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Icon name="people-outline" size={60} color="#d1d5db" />
+              <Icon name="people-outline" size={60} color="#cbd5e1" />
               <Text style={styles.emptyTitle}>No tienes equipos</Text>
               <Text style={styles.emptyText}>
                 Crea un nuevo equipo o únete a uno existente con el ID
@@ -403,7 +407,7 @@ export default function EquiposScreen({ navigation }) {
                   <Icon name="people-outline" size={20} color="#667eea" /> Crear Equipo
                 </Text>
                 <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <Icon name="close-outline" size={24} color="#666" />
+                  <Icon name="close-outline" size={24} color="#64748b" />
                 </TouchableOpacity>
               </View>
 
@@ -429,7 +433,7 @@ export default function EquiposScreen({ navigation }) {
                 />
 
                 <View style={styles.infoBox}>
-                  <Icon name="information-circle-outline" size={20} color="#667eea" />
+                  <Icon name="information-circle-outline" size={20} color="#4338ca" />
                   <Text style={styles.infoText}>
                     Serás el líder de este equipo. Podrás gestionar miembros y tareas.
                   </Text>
@@ -465,7 +469,7 @@ export default function EquiposScreen({ navigation }) {
                   <Icon name="person-add-outline" size={20} color="#667eea" /> Unirse a Equipo
                 </Text>
                 <TouchableOpacity onPress={() => setModalUnirseVisible(false)}>
-                  <Icon name="close-outline" size={24} color="#666" />
+                  <Icon name="close-outline" size={24} color="#64748b" />
                 </TouchableOpacity>
               </View>
 
@@ -481,7 +485,7 @@ export default function EquiposScreen({ navigation }) {
                 />
 
                 <View style={styles.infoBox}>
-                  <Icon name="key-outline" size={20} color="#667eea" />
+                  <Icon name="key-outline" size={20} color="#4338ca" />
                   <Text style={styles.infoText}>
                     Pídele el ID del equipo a tu maestro o líder.
                   </Text>
@@ -521,13 +525,13 @@ export default function EquiposScreen({ navigation }) {
                 <Text style={styles.modalExitoSubtitle}>
                   Comparte este ID con tus alumnos para que se unan:
                 </Text>
-                
+
                 <View style={styles.idContainer}>
                   <Text style={styles.idTexto}>{equipoCreado?.id || 'Cargando...'}</Text>
                 </View>
 
                 <View style={styles.modalExitoButtons}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.modalExitoButton, styles.copiarButton]}
                     onPress={copiarID}
                   >
@@ -535,7 +539,7 @@ export default function EquiposScreen({ navigation }) {
                     <Text style={styles.modalExitoButtonText}>Copiar ID</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.modalExitoButton, styles.compartirButton]}
                     onPress={compartirID}
                   >
@@ -560,6 +564,7 @@ export default function EquiposScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // NUEVO: fondo unificado con EstadiasScreen
   safeArea: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -578,49 +583,62 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 16,
   },
+  // NUEVO: header unificado con EstadiasScreen
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 10,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+    gap: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#1e293b',
   },
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
+  // NUEVO: botón unirse con paleta primaria suave
   joinButton: {
-    padding: 10,
-    backgroundColor: '#f0f0ff',
-    borderRadius: 10,
-    marginRight: 10,
+    backgroundColor: '#e0e7ff',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  // NUEVO: botón crear circular 38x38 (igual al btnAgregar de EstadiasScreen)
   createButton: {
     backgroundColor: '#667eea',
-    padding: 10,
-    borderRadius: 10,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  // NUEVO: listContent con padding unificado
   listContent: {
     padding: 15,
     flexGrow: 1,
   },
+  // NUEVO: tarjeta homogénea (borderRadius 14, padding 16, shadow 0.05)
   equipoCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowRadius: 6,
+    elevation: 2,
   },
   equipoInfo: {
     flex: 1,
@@ -629,84 +647,109 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 4,
   },
+  // NUEVO: tipografía unificada con EstadiasScreen
   equipoNombre: {
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#1e293b',
+    flex: 1,
   },
+  // NUEVO: badge líder con paleta unificada
   liderBadge: {
     backgroundColor: '#fef3c7',
     paddingHorizontal: 10,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: 12,
+    marginLeft: 8,
   },
   liderBadgeText: {
     fontSize: 11,
     color: '#d97706',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   equipoDescripcion: {
     fontSize: 14,
-    color: '#64748b',
+    color: '#475569',
     marginTop: 4,
   },
   equipoMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 8,
     flexWrap: 'wrap',
+    gap: 8,
+  },
+  metaFila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   equipoMetaText: {
     fontSize: 13,
-    color: '#94a3b8',
-    marginRight: 12,
+    color: '#64748b',
   },
+  // NUEVO: botón mostrar ID con paleta primaria suave
   mostrarIdButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0ff',
+    backgroundColor: '#e0e7ff',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    gap: 4,
   },
   mostrarIdText: {
     fontSize: 12,
-    color: '#667eea',
-    marginLeft: 4,
-    fontWeight: '500',
+    color: '#4338ca',
+    fontWeight: '700',
   },
   equipoAcciones: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 10,
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
     gap: 8,
   },
+  // NUEVO: botones de acción homogéneos con EstadiasScreen
   accionBoton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 5,
   },
-  accionText: {
+  // NUEVO: botón primario (igual a btnVer de EstadiasScreen)
+  accionPrimario: {
+    backgroundColor: '#e0e7ff',
+  },
+  accionTextPrimario: {
     fontSize: 12,
-    color: '#64748b',
-    fontWeight: '500',
+    color: '#4338ca',
+    fontWeight: '700',
   },
+  // NUEVO: botón eliminar con paleta roja unificada
   accionEliminar: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: '#fee2e2',
   },
-  accionEliminarText: {
-    color: '#ef4444',
+  accionTextEliminar: {
+    fontSize: 12,
+    color: '#dc2626',
+    fontWeight: '700',
   },
+  // NUEVO: botón salir con paleta ámbar unificada
   accionSalir: {
-    backgroundColor: '#fffbeb',
+    backgroundColor: '#fef3c7',
   },
-  accionSalirText: {
-    color: '#f59e0b',
+  accionTextSalir: {
+    fontSize: 12,
+    color: '#d97706',
+    fontWeight: '700',
   },
   emptyContainer: {
     flex: 1,
@@ -716,7 +759,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#1e293b',
     marginTop: 15,
   },
@@ -727,6 +770,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 30,
   },
+  // NUEVO: modal con borderRadius 20 unificado
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -749,23 +793,24 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#1e293b',
   },
   modalBody: {
     padding: 20,
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#64748b',
     marginBottom: 6,
     fontWeight: '500',
   },
+  // NUEVO: input unificado (borderRadius 10, borde #e2e8f0)
   input: {
     backgroundColor: '#f8fafc',
     borderRadius: 10,
     padding: 12,
-    fontSize: 16,
+    fontSize: 15,
     borderWidth: 1,
     borderColor: '#e2e8f0',
     marginBottom: 15,
@@ -775,33 +820,35 @@ const styles = StyleSheet.create({
     height: 80,
     textAlignVertical: 'top',
   },
+  // NUEVO: infoBox con paleta primaria suave
   infoBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0ff',
+    backgroundColor: '#e0e7ff',
     padding: 12,
     borderRadius: 10,
     marginBottom: 15,
+    gap: 10,
   },
   infoText: {
     fontSize: 13,
-    color: '#64748b',
-    marginLeft: 10,
+    color: '#4338ca',
     flex: 1,
   },
+  // NUEVO: botón principal con paleta unificada
   createEquipoButton: {
     backgroundColor: '#667eea',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    paddingVertical: 14,
     alignItems: 'center',
     marginTop: 5,
   },
   createEquipoText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
   },
-  // Estilos para modal de éxito
+  // NUEVO: modal de éxito con estilo unificado
   modalExitoContent: {
     paddingBottom: 10,
   },
@@ -811,7 +858,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   modalExitoTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1e293b',
     marginTop: 10,
@@ -823,8 +870,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   idContainer: {
-    backgroundColor: '#f1f5f9',
-    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
@@ -832,8 +879,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   idTexto: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#1e293b',
     letterSpacing: 1,
   },
@@ -847,9 +894,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 14,
-    borderRadius: 12,
-    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
+    gap: 6,
   },
   copiarButton: {
     backgroundColor: '#667eea',
@@ -859,8 +906,8 @@ const styles = StyleSheet.create({
   },
   modalExitoButtonText: {
     color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
   modalExitoCerrar: {
     padding: 12,
@@ -868,6 +915,6 @@ const styles = StyleSheet.create({
   },
   modalExitoCerrarText: {
     color: '#94a3b8',
-    fontSize: 15,
+    fontSize: 14,
   },
 });
