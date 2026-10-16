@@ -2,6 +2,9 @@
 module.exports = {
   preset: 'jest-expo',
 
+   // Más tiempo por prueba: la primera de cada pantalla tarda en cargar
+  testTimeout: 30000,
+
   moduleNameMapper: {
     // ✅ Mapeo a la ubicación real (raíz, sin anidación)
     '^expo-modules-core(|/.*)$': '<rootDir>/node_modules/expo-modules-core$1',
