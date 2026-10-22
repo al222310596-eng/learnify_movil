@@ -24,6 +24,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useAuth } from '../contexts/AuthContext';
 import { estadiasAPI } from '../api/api';
+import CompartirModal from '../components/CompartirModal'
 
 export default function EstadiasScreen({ navigation }) {
   const { user } = useAuth();
@@ -35,6 +36,7 @@ export default function EstadiasScreen({ navigation }) {
   const [busqueda, setBusqueda] = useState('');
   const [generandoPDFId, setGenerandoPDFId] = useState(null); // ID de la estadía que se está imprimiendo
   const [nuevas, setNuevas] = useState({ total: 0, ids: [], lista: [] }); //Noti
+  const [compartirItem, setCompartirItem] = useState(null);   // ← NUEVO compartir
 
   const esMaestro = user?.rol === 'maestro';
   const esAlumno = user?.rol === 'alumno';
@@ -276,6 +278,15 @@ export default function EstadiasScreen({ navigation }) {
             )}
           </TouchableOpacity>
 
+          {/* Compartir - Ambos roles: abre el modal de correo/enlace/historial */}
+          <TouchableOpacity
+          style={[styles.btnAccion, styles.btnCompartir]}
+          onPress={() => setCompartirItem(item)}
+          >
+            <Icon name="share-social-outline" size={15} color="#fff" />
+            <Text style={styles.btnImprimirTexto}>Compartir</Text>
+            </TouchableOpacity>
+
           {/* Editar - SOLO ALUMNO */}
           {esAlumno && (
             <TouchableOpacity
@@ -443,6 +454,14 @@ export default function EstadiasScreen({ navigation }) {
           }
         />
       )}
+
+       {/* Modal para compartir la estadía seleccionada */}
+      <CompartirModal
+        visible={!!compartirItem}
+        onClose={() => setCompartirItem(null)}
+        tipo="estadia"
+        documento={compartirItem}
+      />
     </SafeAreaView>
   );
 }
@@ -578,6 +597,7 @@ const styles = StyleSheet.create({
   btnVer: { backgroundColor: '#e0e7ff' },
   btnVerTexto: { fontSize: 12, color: '#4338ca', fontWeight: '700' },
   btnImprimir: { backgroundColor: '#0ea5e9' },
+  btnCompartir: { backgroundColor: '#06b6d4' },
   btnImprimirTexto: { fontSize: 12, color: '#fff', fontWeight: '700' },
   btnEditar: { backgroundColor: '#e0e7ff' },
   btnEditarTexto: { fontSize: 12, color: '#4338ca', fontWeight: '700' },
