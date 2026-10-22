@@ -176,13 +176,22 @@ describe('Mis Minutas (funcional)', () => {
 
   describe('eliminar una minuta', () => {
     // Busca la papelera de la tarjeta n y la presiona
-    const presionarPapelera = (UNSAFE_getAllByType, TouchableOpacity, indiceTarjeta) => {
-      const botones = UNSAFE_getAllByType(TouchableOpacity);
-      // Cada tarjeta tiene 3 botones (Ver, PDF, papelera). Antes de las tarjetas
-      // solo está el botón "+ Nueva".
-      const primerBotonTarjetas = 1; // "+ Nueva"
-      fireEvent.press(botones[primerBotonTarjetas + indiceTarjeta * 3 + 2]);
-    };
+   
+const presionarPapelera = (
+  UNSAFE_getAllByType,
+  TouchableOpacity,
+  indiceTarjeta
+) => {
+  const botones = UNSAFE_getAllByType(TouchableOpacity);
+
+  // Cada tarjeta tiene 4 botones: Ver, PDF, Compartir y Eliminar.
+  // Antes de las tarjetas está el botón "+ Nueva".
+  const primerBotonTarjetas = 1;
+  fireEvent.press(
+    botones[primerBotonTarjetas + indiceTarjeta * 4 + 3]
+  );
+};
+
 
     test('pide confirmación antes de eliminar', async () => {
       const { TouchableOpacity } = require('react-native');
