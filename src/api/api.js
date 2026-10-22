@@ -6,9 +6,9 @@ import axios from 'axios';
 
 // IP DE TU COMPUTADORA
 
-const IP = '192.168.75.207';  //ip de datos 172.20.10.2 172.20.10.4
+const IP = '192.168.100.14';  //ip de datos 172.20.10.2 172.20.10.4
 //const IP = '192.168.100.14'; // ip de internet casa 192.168.100.14
-export const BASE_URL = `http://192.168.75.207:5000/api`; // ✅ EXPORTADA
+export const BASE_URL = `http://192.168.100.14:5000/api`; // ✅ EXPORTADA
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -23,7 +23,7 @@ const api = axios.create({
 // ============================================
 
 export const authAPI = {
-  registrar: async (nombre, email, password, rol) => {cd 
+  registrar: async (nombre, email, password, rol) => { 
     try {
       const response = await api.post('/registro', { nombre, email, password, rol });
       return response.data;
@@ -301,6 +301,21 @@ export const dualesAPI = {
     return { exito: false, mensaje: error.response?.data?.mensaje || 'Error al obtener detalle' };
   }
 },
+
+  // ✅ NUEVO: obtiene el HTML del formato del dual para convertirlo en PDF
+  // (el backend lo devuelve como texto HTML, no como JSON)
+  getFormatoHTML: async (dualId) => {
+    try {
+      const response = await api.get(`/duales/formato/${dualId}`, {
+        responseType: 'text', // importante: HTML plano, no JSON
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener formato del dual:', error);
+      return null; // si falla devolvemos null y quien lo llame lo maneja
+    }
+  },
+
   crearDual: async (datos) => {
     try {
       const response = await api.post('/duales/crear', datos);
@@ -734,6 +749,75 @@ export const minutasAPI = {
         exito: false,
         mensaje: error.response?.data?.mensaje || 'Error al eliminar'
       };
+    }
+  },
+};
+
+// ============================================
+// COMPARTIR DOCUMENTOS (estadía, dual, minuta)
+// Usa los mismos endpoints que la versión web
+// ============================================
+export const compartirAPI = {
+
+  // Envía el PDF por correo a uno o varios destinatarios
+  // POST /api/compartir/crear  (multipart/form-data)
+  enviarPorCorreo: async ({ pdfUri, correos, tipo, documentoId, creadorId }) => {
+    try {
+      const formData = new FormData();
+
+      // En React Native el archivo se manda como objeto { uri, name, type }
+      // (en la web se manda un Blob, aquí no existe)
+      formData.append('pdf_file', {
+        uri: pdfUri,
+        name: `documento_${tipo}.pdf`,
+        type: 'application/pdf',
+      });
+
+      // El backend espera los correos separados por coma en un solo campo
+      formData.append('correos', correos.join(','));
+      formData.append('tipo_documento', tipo);      // 'estadia' | 'dual' | 'minuta'
+      formData.append('documento_id', documentoId);
+      formData.append('creador_id', creadorId);
+
+      const response = await api.post('/compartir/crear', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 90000, // más tiempo: el envío por SMTP puede tardar
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al enviar por correo:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error de conexión' };
+    }
+  },
+
+  // Genera un enlace público con vigencia
+  // POST /api/compartir/generar-enlace
+  generarEnlace: async ({ documentoId, tipo, creadorId, diasExpiracion }) => {
+    try {
+      const response = await api.post('/compartir/generar-enlace', {
+        documento_id: documentoId,
+        tipo_documento: tipo,
+        creador_id: creadorId,
+        dias_expiracion: diasExpiracion, // 0 = nunca expira
+        permisos: 'ver',                 // solo lectura
+        correos: [],                     // el enlace no va ligado a correos
+      });
+      return response.data; // { exito, token, enlace }
+    } catch (error) {
+      console.error('Error al generar enlace:', error);
+      return { exito: false, mensaje: error.response?.data?.mensaje || 'Error de conexión' };
+    }
+  },
+
+  // Historial de "creado" y "visto" de un documento
+  // GET /api/compartir/historial/<documento_id>
+  getHistorial: async (documentoId) => {
+    try {
+      const response = await api.get(`/compartir/historial/${documentoId}`);
+      return response.data; // { exito, historial: [{accion, fecha, ip}] }
+    } catch (error) {
+      console.error('Error al obtener historial:', error);
+      return { exito: false, historial: [] };
     }
   },
 };

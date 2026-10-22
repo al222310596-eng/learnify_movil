@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { dualesAPI } from '../api/api';
+import CompartirModal from '../components/CompartirModal';   // ← Nuevo Compartir
 
 export default function DualesScreen({ navigation }) {
   const { user } = useAuth();
@@ -35,6 +36,7 @@ export default function DualesScreen({ navigation }) {
   const [filtrados, setFiltrados] = useState([]);       // la lista ya filtrada
   const [filtroEstado, setFiltroEstado] = useState('todos'); // chip seleccionado
   const [busqueda, setBusqueda] = useState('');          // texto del buscador
+  const [compartirDual, setCompartirDual] = useState(null);   // ← Compartir
 
   const esMaestro = user?.rol === 'maestro';
   const esAlumno = user?.rol === 'alumno';
@@ -332,6 +334,15 @@ Generado el: ${new Date().toLocaleString('es-MX')}
               <Text style={styles.actionTextEliminar}>PDF</Text>
             </TouchableOpacity>
           )}
+
+           {/* ← NUEVO: Compartir (alumno y maestro) */}
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionVer]}
+            onPress={() => setCompartirDual(item)}
+          >
+            <Icon name="share-social-outline" size={15} color="#4338ca" />
+            <Text style={styles.actionTextVer}>Compartir</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -624,7 +635,16 @@ Generado el: ${new Date().toLocaleString('es-MX')}
       />
 
       {renderModalDetalle()}
+
+       {/* ← Nuevo Compartir */}
+      <CompartirModal
+        visible={!!compartirDual}
+        onClose={() => setCompartirDual(null)}
+        tipo="dual"
+        documento={compartirDual}
+      />
     </SafeAreaView>
+    
   );
 }
 

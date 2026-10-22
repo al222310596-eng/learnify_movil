@@ -20,6 +20,7 @@ import {
     eliminarMinutaLocal,
 } from "../utils/storage";
 import MinutaCard from "../components/MinutaCard";
+import CompartirModal from "../components/CompartirModal"; //Compartir
 
 export default function MisMinutasScreen({ navigation }) {
     const { user } = useAuth();
@@ -27,6 +28,7 @@ export default function MisMinutasScreen({ navigation }) {
     const [filtradas, setFiltradas] = useState([]);
     const [busqueda, setBusqueda] = useState("");
     const [loading, setLoading] = useState(true);
+    const [compartirMinuta, setCompartirMinuta] = useState(null); // compartir
 
 const cargar = async () => {
     setLoading(true);
@@ -179,12 +181,20 @@ const cargar = async () => {
                                 navigation.navigate("DetalleMinuta", { minuta: item })
                             }
                             onPDF={() => handlePDF(item)}
+                            onCompartir={() => setCompartirMinuta(item)} //compartir
                             onEliminar={() => handleEliminar(item._id)}
                         />
                     )}
                     contentContainerStyle={{ paddingBottom: 30 }}
                 />
             )}
+            {/* ← NUEVO: modal de compartir */}
+            <CompartirModal
+                visible={!!compartirMinuta}
+                onClose={() => setCompartirMinuta(null)}
+                tipo="minuta"
+                documento={compartirMinuta}
+            />
         </View>
     );
 }

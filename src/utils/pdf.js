@@ -240,3 +240,32 @@ export const exportarPDFyCompartir = async (minuta) => {
 };
 
 export const generarPDF = exportarPDFyCompartir;
+
+// ============================================
+// NUEVO (para compartir): devuelve el HTML de la minuta SIN imprimir.
+// No modifica exportarPDFyCompartir; es una función aparte.
+// ============================================
+export const obtenerHtmlMinuta = async (minuta) => {
+    const tieneAsistentes =
+        Array.isArray(minuta?.asistentes) && minuta.asistentes.length > 0;
+    const tieneAcuerdos =
+        Array.isArray(minuta?.acuerdos) && minuta.acuerdos.length > 0;
+
+    let minutaCompleta = minuta;
+
+    // Si faltan asistentes/acuerdos, pide el detalle completo al backend
+    if ((!tieneAsistentes || !tieneAcuerdos) && minuta?._id) {
+        const res = await minutasAPI.getDetalleMinuta(minuta._id);
+        if (res?.exito && res.minuta) minutaCompleta = res.minuta;
+    }
+
+    // Logos en base64 para incrustarlos en el HTML
+    const logoEscuelaBase64 = await assetToBase64(
+        require("../assets/img/logo_escuela.png")
+    );
+    const logoTecnmBase64 = await assetToBase64(
+        require("../assets/img/logo_tecnm.png")
+    );
+
+    return generarHtmlFormato(minutaCompleta, logoEscuelaBase64, logoTecnmBase64);
+};

@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 
-export default function MinutaCard({ minuta, onVer, onEliminar, onPDF }) {
+export default function MinutaCard({ minuta, onVer, onEliminar, onPDF, onCompartir }) {
     const formatearFecha = (fecha) => {
         if (!fecha) return "";
         try {
@@ -61,6 +61,12 @@ export default function MinutaCard({ minuta, onVer, onEliminar, onPDF }) {
                 <TouchableOpacity style={[styles.btn, styles.btnPdf]} onPress={onPDF}>
                     <Icon name="document-text-outline" size={14} color="#4338ca" />
                     <Text style={styles.btnTextPdf}>PDF</Text>
+                </TouchableOpacity>
+
+                 {/* ← NUEVO: abre el modal de compartir (correo / enlace / historial) */}
+                <TouchableOpacity style={[styles.btn, styles.btnPdf]} onPress={onCompartir}>
+                    <Icon name="share-social-outline" size={14} color="#4338ca" />
+                    <Text style={styles.btnTextPdf}>Compartir</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
