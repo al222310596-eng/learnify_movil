@@ -822,4 +822,43 @@ export const compartirAPI = {
   },
 };
 
+// ============================================
+// HISTORIAL DE DESCARGAS
+// ============================================
+
+export const historialAPI = {
+  // Registrar una descarga
+  // POST /api/historial/registrar
+  registrar: async ({ usuarioId, tipo, referencia }) => {
+    try {
+      const response = await api.post('/historial/registrar', {
+        usuario_id: usuarioId,
+        tipo: tipo,           // 'Minuta' | 'Estadía' | 'Dual'
+        referencia: referencia || '',
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error al registrar descarga:', error);
+      return {
+        exito: false,
+        mensaje: error.response?.data?.mensaje || 'Error al registrar',
+      };
+    }
+  },
+
+  // Obtener los últimos 10 registros del usuario
+  // GET /api/historial/<usuario_id>
+  obtener: async (usuarioId) => {
+    if (!usuarioId) {
+      return { exito: false, historial: [] };
+    }
+    try {
+      const response = await api.get(`/historial/${usuarioId}`);
+      return response.data; // { exito, historial: [{_id, tipo, referencia, fecha}] }
+    } catch (error) {
+      console.error('Error al obtener historial:', error);
+      return { exito: false, historial: [] };
+    }
+  },
+};
 export default api;
