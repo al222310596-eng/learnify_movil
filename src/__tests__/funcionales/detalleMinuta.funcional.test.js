@@ -7,7 +7,21 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import DetalleMinutaScreen from '../../screens/DetalleMinutaScreen';
 import { minutasAPI } from '../../api/api';
 
-jest.mock('../../api/api', () => ({ minutasAPI: { getDetalleMinuta: jest.fn() } }));
+// ✅ Mock del API (ya existente)
+jest.mock('../../api/api', () => ({
+  minutasAPI: { getDetalleMinuta: jest.fn() },
+  historialAPI: { registrar: jest.fn().mockResolvedValue({ exito: true }) },
+}));
+
+// ✅ NUEVO: Mock de useAuth para que DetalleMinutaScreen no explote
+jest.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { _id: 'test-user-id', nombre: 'Test', rol: 'alumno', email: 'test@test.com' },
+    isLoading: false,
+    logout: jest.fn(),
+  }),
+}));
+
 jest.mock('react-native-vector-icons/Ionicons', () => 'Icon');
 
 const minutaResumen = { _id: 'm1', asunto: 'Resumen', fecha: '2026-03-15' };
