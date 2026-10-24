@@ -1,3 +1,7 @@
+// ============================================
+// DetalleMinutaScreen - Detalle de Minuta
+// ============================================
+
 import React, { useEffect, useState } from "react";
 import {
     View,
@@ -9,10 +13,12 @@ import {
     ActivityIndicator,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { minutasAPI } from "../api/api";
+import { minutasAPI, historialAPI } from "../api/api";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function DetalleMinutaScreen({ route, navigation }) {
     const { minuta: minutaParam } = route.params || {};
+    const { user } = useAuth();
 
     const [minuta, setMinuta] = useState(minutaParam || null);
     const [loading, setLoading] = useState(true);
@@ -46,6 +52,15 @@ export default function DetalleMinutaScreen({ route, navigation }) {
                         res.minuta.acuerdos
                     );
                     setMinuta(res.minuta);
+
+                    // ✅ Registrar descarga en el historial
+                    if (user?._id) {
+                        await historialAPI.registrar({
+                            usuarioId: user._id,
+                            tipo: 'Minuta',
+                            referencia: res.minuta.asunto || 'Minuta',
+                        });
+                    }
                 } else {
                     // Fallback: mantener lo que vino por params
                     console.warn("[DetalleMinuta] Backend sin exito, uso params");

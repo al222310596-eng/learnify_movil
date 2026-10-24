@@ -18,10 +18,12 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
-import { estadiasAPI } from '../api/api';
+import { estadiasAPI, historialAPI } from '../api/api';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function DetalleEstadiaScreen({ route, navigation }) {
   const { id } = route.params;
+  const { user } = useAuth();
   const [estadia, setEstadia] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generandoPDF, setGenerandoPDF] = useState(false);
@@ -90,6 +92,15 @@ export default function DetalleEstadiaScreen({ route, navigation }) {
       await FileSystem.writeAsStringAsync(destino, base64, {
         encoding: FileSystem.EncodingType.Base64,
       });
+
+      // ✅ Registrar descarga en el historial
+      if (user?._id) {
+        await historialAPI.registrar({
+          usuarioId: user._id,
+          tipo: 'Estadía',
+          referencia: estadia.proyecto || 'Formato de Estadía',
+        });
+      }
 
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(destino, {
@@ -225,7 +236,6 @@ export default function DetalleEstadiaScreen({ route, navigation }) {
           <Item label="Periodo" valor={estadia.periodo} icono="calendar-outline" />
           <Item label="Fecha de inicio" valor={formatearFecha(estadia.fecha_inicio)} icono="calendar-outline" />
           <Item label="Fecha de término" valor={formatearFecha(estadia.fecha_fin)} icono="calendar-outline" />
-          {/* ✅ Eliminado: "Horas totales" con barra de progreso (está en RegistrarHoras) */}
         </Seccion>
 
         <View style={{ height: 40 }} />

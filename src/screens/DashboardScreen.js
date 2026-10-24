@@ -16,7 +16,7 @@ import {
   StatusBar
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { equiposAPI, tareasAPI, minutasAPI } from '../api/api';
+import { equiposAPI, tareasAPI, minutasAPI, historialAPI } from '../api/api';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function DashboardScreen({ navigation }) {
@@ -24,6 +24,7 @@ export default function DashboardScreen({ navigation }) {
   const [equipos, setEquipos] = useState([]);
   const [tareas, setTareas] = useState([]);
   const [minutas, setMinutas] = useState([]);
+  const [historial, setHistorial] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -69,6 +70,12 @@ export default function DashboardScreen({ navigation }) {
       const minutasResult = await minutasAPI.getMinutas(user._id);
       if (minutasResult.exito) {
         setMinutas(minutasResult.minutas || []);
+      }
+
+      // ✅ Cargar historial de descargas
+      const historialResult = await historialAPI.obtener(user._id);
+      if (historialResult.exito) {
+        setHistorial(historialResult.historial || []);
       }
     } catch (error) {
       console.error('Error al cargar datos:', error);
@@ -138,7 +145,7 @@ export default function DashboardScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Estadísticas rápidas */}
+        {/* Estadísticas rápidas */}  
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{equipos.length}</Text>
@@ -158,7 +165,7 @@ export default function DashboardScreen({ navigation }) {
             <Text style={styles.statNumber}>{minutas.length}</Text>
             <Text style={styles.statLabel}>Minutas</Text>
           </View>
-        </View>
+        </View> 
 
         {/* Botón de videollamada */}
         <TouchableOpacity
@@ -225,6 +232,53 @@ export default function DashboardScreen({ navigation }) {
                 <Icon name="chevron-forward-outline" size={20} color="#94a3b8" />
               </TouchableOpacity>
             ))
+          )}
+        </View>
+
+        {/* ✅ Sección de Historial de Descargas */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Historial de Descargas</Text>
+          </View>
+
+          {historial.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Icon name="download-outline" size={28} color="#94a3b8" />
+              <Text style={styles.emptyText}>Aún no has descargado documentos</Text>
+            </View>
+          ) : (
+            historial.map((item, index) => {
+              // Estilos según tipo
+              const tipoStyles = {
+                Minuta:  { icon: 'document-text-outline', color: '#d97706', bg: '#fef3c7' },
+                Estadía: { icon: 'business-outline',       color: '#059669', bg: '#d1fae5' },
+                Dual:    { icon: 'briefcase-outline',      color: '#2563eb', bg: '#dbeafe' },
+              };
+              const estilo = tipoStyles[item.tipo] || {
+                icon: 'document-outline', color: '#4338ca', bg: '#e0e7ff'
+              };
+
+              return (
+                <View key={item._id || index} style={styles.historialCard}>
+                  <View style={[styles.historialIcono, { backgroundColor: estilo.bg }]}>
+                    <Icon name={estilo.icon} size={20} color={estilo.color} />
+                  </View>
+
+                  <View style={styles.historialInfo}>
+                    <Text style={styles.historialTipo}>
+                      {item.tipo} descargada
+                    </Text>
+                    <Text style={styles.historialRef} numberOfLines={1}>
+                      {item.referencia || 'Sin título'}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.historialFecha}>
+                    {item.fecha || ''}
+                  </Text>
+                </View>
+              );
+            })
           )}
         </View>
 
@@ -488,6 +542,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 6,
     elevation: 2,
+    gap: 8,
   },
   emptyText: {
     color: '#94a3b8',
@@ -545,5 +600,48 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 13,
+  },
+
+  // ============================================
+  // Historial de Descargas
+  // ============================================
+  historialCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  historialIcono: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  historialInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  historialTipo: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 2,
+  },
+  historialRef: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  historialFecha: {
+    fontSize: 11,
+    color: '#94a3b8',
   },
 });

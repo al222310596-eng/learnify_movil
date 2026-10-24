@@ -95,7 +95,7 @@ export default function PerfilScreen() {
           </View>
         </View>
 
-        {/* Opciones */}
+        
         <View style={styles.optionsContainer}>
           <TouchableOpacity
             style={styles.optionItem}
@@ -103,24 +103,6 @@ export default function PerfilScreen() {
           >
             <Icon name="person-outline" size={22} color="#667eea" />
             <Text style={styles.optionText}>Editar perfil</Text>
-            <Icon name="chevron-forward-outline" size={20} color="#94a3b8" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Icon name="notifications-outline" size={22} color="#667eea" />
-            <Text style={styles.optionText}>Notificaciones</Text>
-            <Icon name="chevron-forward-outline" size={20} color="#94a3b8" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.optionItem}>
-            <Icon name="color-palette-outline" size={22} color="#667eea" />
-            <Text style={styles.optionText}>Tema</Text>
-            <Icon name="chevron-forward-outline" size={20} color="#94a3b8" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.optionItem, styles.optionItemLast]}>
-            <Icon name="help-circle-outline" size={22} color="#667eea" />
-            <Text style={styles.optionText}>Ayuda y soporte</Text>
             <Icon name="chevron-forward-outline" size={20} color="#94a3b8" />
           </TouchableOpacity>
         </View>

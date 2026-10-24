@@ -21,8 +21,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { dualesAPI } from '../api/api';
-import CompartirModal from '../components/CompartirModal';   // ← Nuevo Compartir
+import { dualesAPI, historialAPI } from '../api/api';
+import CompartirModal from '../components/CompartirModal';
 
 export default function DualesScreen({ navigation }) {
   const { user } = useAuth();
@@ -33,10 +33,10 @@ export default function DualesScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDual, setSelectedDual] = useState(null);
   const [dualAEliminar, setDualAEliminar] = useState(null);
-  const [filtrados, setFiltrados] = useState([]);       // la lista ya filtrada
-  const [filtroEstado, setFiltroEstado] = useState('todos'); // chip seleccionado
-  const [busqueda, setBusqueda] = useState('');          // texto del buscador
-  const [compartirDual, setCompartirDual] = useState(null);   // ← Compartir
+  const [filtrados, setFiltrados] = useState([]);
+  const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [busqueda, setBusqueda] = useState('');
+  const [compartirDual, setCompartirDual] = useState(null);
 
   const esMaestro = user?.rol === 'maestro';
   const esAlumno = user?.rol === 'alumno';
@@ -63,32 +63,31 @@ export default function DualesScreen({ navigation }) {
     cargarDuales();
   }, []);
 
-
   // Cada vez que cambie la lista, el chip o el texto, se vuelve a filtrar
-useEffect(() => {
-  aplicarFiltros();
-}, [duales, filtroEstado, busqueda]);
+  useEffect(() => {
+    aplicarFiltros();
+  }, [duales, filtroEstado, busqueda]);
 
-const aplicarFiltros = () => {
-  let resultado = [...duales];
+  const aplicarFiltros = () => {
+    let resultado = [...duales];
 
-  // Solo maestros pueden filtrar por estado
-  if (esMaestro && filtroEstado !== 'todos') {
-    resultado = resultado.filter(d => d.estado === filtroEstado);
-  }
+    // Solo maestros pueden filtrar por estado
+    if (esMaestro && filtroEstado !== 'todos') {
+      resultado = resultado.filter(d => d.estado === filtroEstado);
+    }
 
-  // Búsqueda por título, empresa o nombre del alumno
-  if (busqueda.trim()) {
-    const q = busqueda.toLowerCase();
-    resultado = resultado.filter(d =>
-      (d.titulo || '').toLowerCase().includes(q) ||
-      (d.empresa || '').toLowerCase().includes(q) ||
-      (d.alumno?.nombre || '').toLowerCase().includes(q)
-    );
-  }
+    // Búsqueda por título, empresa o nombre del alumno
+    if (busqueda.trim()) {
+      const q = busqueda.toLowerCase();
+      resultado = resultado.filter(d =>
+        (d.titulo || '').toLowerCase().includes(q) ||
+        (d.empresa || '').toLowerCase().includes(q) ||
+        (d.alumno?.nombre || '').toLowerCase().includes(q)
+      );
+    }
 
-  setFiltrados(resultado);
-};
+    setFiltrados(resultado);
+  };
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -209,6 +208,15 @@ Generado el: ${new Date().toLocaleString('es-MX')}
         title: `Reporte Dual - ${dual.titulo}`
       });
 
+      // ✅ Registrar descarga en el historial
+      if (user?._id) {
+        await historialAPI.registrar({
+          usuarioId: user._id,
+          tipo: 'Dual',
+          referencia: dual.titulo || 'Formato de Dual',
+        });
+      }
+
     } catch (error) {
       console.error('Error al generar PDF:', error);
       Alert.alert('Error', 'No se pudo generar el reporte');
@@ -255,7 +263,6 @@ Generado el: ${new Date().toLocaleString('es-MX')}
         >
           <View style={styles.dualHeader}>
             <Text style={styles.dualTitulo} numberOfLines={1}>{item.titulo}</Text>
-            {/* NUEVO: badge con bg unificado */}
             <View style={[styles.estadoBadge, { backgroundColor: estadoInfo.bg }]}>
               <Icon name={estadoInfo.icon} size={12} color={estadoInfo.color} />
               <Text style={[styles.estadoText, { color: estadoInfo.color }]}>
@@ -264,7 +271,6 @@ Generado el: ${new Date().toLocaleString('es-MX')}
             </View>
           </View>
 
-          {/* NUEVO: filas con icono al estilo EstadiasScreen */}
           <View style={styles.fila}>
             <Icon name="business-outline" size={16} color="#667eea" />
             <Text style={styles.dualEmpresa} numberOfLines={1}>{item.empresa}</Text>
@@ -302,9 +308,6 @@ Generado el: ${new Date().toLocaleString('es-MX')}
             <Text style={styles.actionTextVer}>Detalles</Text>
           </TouchableOpacity>
 
-          {/* ✅ ELIMINADO: Botón "Firmar" de la tarjeta principal
-      Ahora la firma se realiza desde el modal de detalles → sección "Materias y Firmas" */}
-
           {esMaestro && item.estado !== 'inactivo' && (
             <TouchableOpacity
               style={[styles.actionButton, styles.actionEditar]}
@@ -335,7 +338,6 @@ Generado el: ${new Date().toLocaleString('es-MX')}
             </TouchableOpacity>
           )}
 
-           {/* ← NUEVO: Compartir (alumno y maestro) */}
           <TouchableOpacity
             style={[styles.actionButton, styles.actionVer]}
             onPress={() => setCompartirDual(item)}
@@ -454,7 +456,6 @@ Generado el: ${new Date().toLocaleString('es-MX')}
                 </Text>
                 {dual.asignaciones && dual.asignaciones.length > 0 ? (
                   dual.asignaciones.map((a, index) => {
-                    // Solo maestros pueden firmar, y solo si aún no está firmado y él es el maestro asignado
                     const puedeFirmar = esMaestro && !a.firmado && a.maestro_email === user?.email;
 
                     return (
@@ -470,7 +471,6 @@ Generado el: ${new Date().toLocaleString('es-MX')}
                           </View>
                         </View>
 
-                        {/* Contenedor de badges + botón firmar */}
                         <View style={styles.firmaRightContainer}>
                           <View style={[styles.firmaBadge, a.firmado ? styles.firmaFirmado : styles.firmaPendiente]}>
                             {a.firmado ? (
@@ -484,31 +484,29 @@ Generado el: ${new Date().toLocaleString('es-MX')}
                                 <Text style={styles.firmaTextPendiente}>Pendiente</Text>
                               </>
                             )}
-          </View>
+                          </View>
 
-          {/* ✅ NUEVO: Botón Firmar dentro del modal, junto a la asignación */}
-          {puedeFirmar && (
-            <TouchableOpacity
-              style={styles.btnFirmarInline}
-              onPress={() => {
-                cerrarDetalle(); // Cierra el modal
-                // Pequeño delay para que se cierre y luego navegue
-                setTimeout(() => {
-                  abrirFirma(dual._id, index);
-                }, 300);
-              }}
-            >
-              <Icon name="create-outline" size={14} color="#fff" />
-              <Text style={styles.btnFirmarInlineText}>Firmar</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    );
-  })
-) : (
-  <Text style={styles.sinAsignaciones}>No hay materias asignadas.</Text>
-)}
+                          {puedeFirmar && (
+                            <TouchableOpacity
+                              style={styles.btnFirmarInline}
+                              onPress={() => {
+                                cerrarDetalle();
+                                setTimeout(() => {
+                                  abrirFirma(dual._id, index);
+                                }, 300);
+                              }}
+                            >
+                              <Icon name="create-outline" size={14} color="#fff" />
+                              <Text style={styles.btnFirmarInlineText}>Firmar</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })
+                ) : (
+                  <Text style={styles.sinAsignaciones}>No hay materias asignadas.</Text>
+                )}
               </View>
 
               <View style={styles.modalActions}>
@@ -526,13 +524,12 @@ Generado el: ${new Date().toLocaleString('es-MX')}
     );
   };
 
-
   const estados = [
-  { key: 'todos', label: 'Todos' },
-  { key: 'activo', label: 'Activo' },
-  { key: 'pendiente', label: 'Pendiente' },
-  { key: 'inactivo', label: 'Inactivo' },
-];
+    { key: 'todos', label: 'Todos' },
+    { key: 'activo', label: 'Activo' },
+    { key: 'pendiente', label: 'Pendiente' },
+    { key: 'inactivo', label: 'Inactivo' },
+  ];
 
   if (loading) {
     return (
@@ -550,7 +547,6 @@ Generado el: ${new Date().toLocaleString('es-MX')}
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
-      {/* NUEVO: header unificado con EstadiasScreen */}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>
@@ -568,46 +564,44 @@ Generado el: ${new Date().toLocaleString('es-MX')}
         )}
       </View>
 
-      {/* Barra de búsqueda */}
-<View style={styles.searchContainer}>
-  <Icon name="search-outline" size={20} color="#94a3b8" />
-  <TextInput
-    style={styles.searchInput}
-    placeholder="Buscar por título, empresa o alumno..."
-    placeholderTextColor="#94a3b8"
-    value={busqueda}
-    onChangeText={setBusqueda}
-  />
-  {busqueda.length > 0 && (
-    <TouchableOpacity onPress={() => setBusqueda('')}>
-      <Icon name="close-circle" size={20} color="#94a3b8" />
-    </TouchableOpacity>
-  )}
-</View>
+      <View style={styles.searchContainer}>
+        <Icon name="search-outline" size={20} color="#94a3b8" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar por título, empresa o alumno..."
+          placeholderTextColor="#94a3b8"
+          value={busqueda}
+          onChangeText={setBusqueda}
+        />
+        {busqueda.length > 0 && (
+          <TouchableOpacity onPress={() => setBusqueda('')}>
+            <Icon name="close-circle" size={20} color="#94a3b8" />
+          </TouchableOpacity>
+        )}
+      </View>
 
-{/* Chips de estado - SOLO MAESTRO */}
-{esMaestro && (
-  <View style={styles.chipsWrapper}>
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.chipsContainer}
-      style={styles.chipsScroll}
-    >
-      {estados.map((e) => (
-        <TouchableOpacity
-          key={e.key}
-          style={[styles.chip, filtroEstado === e.key && styles.chipActivo]}
-          onPress={() => setFiltroEstado(e.key)}
-        >
-          <Text style={[styles.chipText, filtroEstado === e.key && styles.chipTextActivo]}>
-            {e.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  </View>
-)}
+      {esMaestro && (
+        <View style={styles.chipsWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipsContainer}
+            style={styles.chipsScroll}
+          >
+            {estados.map((e) => (
+              <TouchableOpacity
+                key={e.key}
+                style={[styles.chip, filtroEstado === e.key && styles.chipActivo]}
+                onPress={() => setFiltroEstado(e.key)}
+              >
+                <Text style={[styles.chipText, filtroEstado === e.key && styles.chipTextActivo]}>
+                  {e.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       <FlatList
         data={filtrados}
@@ -636,7 +630,6 @@ Generado el: ${new Date().toLocaleString('es-MX')}
 
       {renderModalDetalle()}
 
-       {/* ← Nuevo Compartir */}
       <CompartirModal
         visible={!!compartirDual}
         onClose={() => setCompartirDual(null)}
@@ -644,12 +637,10 @@ Generado el: ${new Date().toLocaleString('es-MX')}
         documento={compartirDual}
       />
     </SafeAreaView>
-    
   );
 }
 
 const styles = StyleSheet.create({
-  // NUEVO: fondo unificado
   safeArea: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -664,7 +655,6 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 16,
   },
-  // NUEVO: header unificado con EstadiasScreen
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -681,7 +671,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1e293b',
   },
-  // NUEVO: botón crear circular 38x38
   createButton: {
     backgroundColor: '#667eea',
     width: 38,
@@ -694,7 +683,6 @@ const styles = StyleSheet.create({
     padding: 15,
     flexGrow: 1,
   },
-  // NUEVO: tarjeta homogénea (borderRadius 14, padding 16, shadow 0.05)
   dualCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -716,7 +704,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  // NUEVO: tipografía unificada
   dualTitulo: {
     fontSize: 17,
     fontWeight: '700',
@@ -736,7 +723,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  // NUEVO: filas con icono iguales a EstadiasScreen
   fila: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -763,7 +749,6 @@ const styles = StyleSheet.create({
     color: '#475569',
     flex: 1,
   },
-  // NUEVO: acciones con separador superior igual a EstadiasScreen
   dualActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -773,7 +758,6 @@ const styles = StyleSheet.create({
     borderTopColor: '#f1f5f9',
     gap: 8,
   },
-  // NUEVO: botones de acción homogéneos
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -829,7 +813,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 30,
   },
-  // NUEVO: modal con borderRadius 20 unificado
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -994,7 +977,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-    // Filtros (iguales a EstadiasScreen)
+  // Filtros
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1032,13 +1015,11 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, color: '#64748b', fontWeight: '500' },
   chipTextActivo: { color: '#fff', fontWeight: '600' },
 
-    // ✅ NUEVO: contenedor derecho con badge + botón firmar
   firmaRightContainer: {
     alignItems: 'flex-end',
     gap: 6,
   },
 
-  // ✅ NUEVO: botón firmar inline (dentro del modal)
   btnFirmarInline: {
     flexDirection: 'row',
     alignItems: 'center',
